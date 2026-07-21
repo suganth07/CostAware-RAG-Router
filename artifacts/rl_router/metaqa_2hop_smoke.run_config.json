@@ -1,0 +1,90 @@
+{
+  "dataset": "metaqa_2hop",
+  "dataset_split": "train",
+  "questions": 20,
+  "max_documents": 1000,
+  "routes": [
+    "hybrid_rag",
+    "graph_rag",
+    "optimized_grag"
+  ],
+  "generation_enabled": false,
+  "learned_structural_models_enabled": false,
+  "optimized_structural_encoder": "FeatureStructuralEncoder",
+  "quality_definition": "0.40 answer + 0.25 faithfulness + 0.20 evidence + 0.15 completeness",
+  "cost_maxima": {
+    "latency": 2648.0988999828696,
+    "graph_nodes": 479.0,
+    "graph_edges": 712.0,
+    "evidence_units": 252.0,
+    "context_chars": 11994.0
+  },
+  "cost_weights": {
+    "latency": 0.55,
+    "graph_nodes": 0.15,
+    "graph_edges": 0.15,
+    "evidence_units": 0.1,
+    "context_chars": 0.05
+  },
+  "reward_config": {
+    "acceptable_quality": 0.65,
+    "unacceptable_penalty": 2.0,
+    "cost_penalty": 0.35
+  },
+  "index_reports": {
+    "hybrid_rag": {
+      "documents": 1000,
+      "chunks": 1000,
+      "vectors": 1000,
+      "details": {
+        "normal": {
+          "documents": 1000,
+          "chunks": 1000,
+          "vectors": 1000,
+          "details": {}
+        },
+        "bm25": {
+          "documents": 1000,
+          "chunks": 1000,
+          "vectors": 0,
+          "details": {}
+        }
+      }
+    },
+    "graph_rag": {
+      "documents": 1000,
+      "chunks": 1000,
+      "graph_nodes": 40124,
+      "graph_edges": 134741,
+      "vectors": 1000,
+      "embedded_vectors": 1000,
+      "cached_vectors": 0
+    },
+    "optimized_grag": {
+      "documents": 0,
+      "chunks": 0,
+      "graph_nodes": 40124,
+      "graph_edges": 134741,
+      "vectors": 0,
+      "capsules": 13717,
+      "capsule_edges": 89402,
+      "details": {
+        "capsule_build": {
+          "hub_threshold": 17.0,
+          "hub_count": 2145,
+          "region_count": 3895,
+          "capsule_count": 13717,
+          "coverage_capsule_count": 6460,
+          "covered_node_count": 40124,
+          "uncovered_node_count": 0,
+          "node_coverage_rate": 1.0,
+          "construction_schema_version": 3
+        },
+        "capsule_index": {
+          "retrieval_mode": "semantic_text",
+          "summary_embeddings_skipped": false
+        }
+      }
+    }
+  }
+}
