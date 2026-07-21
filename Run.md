@@ -154,3 +154,71 @@ python scripts/run_grag_evaluation.py --dataset 2wiki --system both
 
 For a 6 GB GPU, keep the default `--max-workers 1`. If Ollama embeddings run out
 of memory, add `--embedding-batch-size 8` or `--embedding-batch-size 4`.
+
+## 8. R-GCN-free Hybrid / Graph / Optimized RL Router
+
+This is a separate comparison workflow. It does **not** delete or retrain the
+existing R-GCN artifacts; the new route collector explicitly uses the fallback
+`FeatureStructuralEncoder`, so neither R-GCN vectors nor the query projector
+are loaded.
+
+Install the normal project dependencies and ensure Ollama is running:
+
+```powershell
+python -m pip install -r requirements.txt
+ollama pull nomic-embed-text
+ollama pull qwen3:4b-instruct
+ollama serve
+```
+
+First verify the router code and command options:
+
+```powershell
+python -m pytest -q tests/test_rl_router.py
+python scripts/build_route_outcomes.py --help
+python scripts/train_cost_aware_router.py --help
+```
+
+Run a small wiring test. The complete MetaQA graph is loaded, but Hybrid RAG
+and GraphRAG are limited to 1,000 source facts, so this command is not a
+reportable quality run:
+
+```powershell
+python scripts/build_route_outcomes.py `
+  --dataset metaqa_2hop `
+  --split train `
+  --max-questions 20 `
+  --max-documents 1000 `
+  --output artifacts/rl_router/metaqa_2hop_smoke.jsonl
+```
+
+Open `artifacts/rl_router/metaqa_2hop_smoke.run_config.json` and confirm:
+
+```text
+learned_structural_models_enabled: false
+optimized_structural_encoder: FeatureStructuralEncoder
+routes: hybrid_rag, graph_rag, optimized_grag
+```
+
+For a reportable train outcome dataset, use the full corpus:
+
+```powershell
+python scripts/build_route_outcomes.py `
+  --dataset metaqa_2hop `
+  --split train `
+  --max-questions 5000 `
+  --full-corpus `
+  --output artifacts/rl_router/metaqa_2hop_train.jsonl
+```
+
+Then train the full-feedback contextual-bandit router:
+
+```powershell
+python scripts/train_cost_aware_router.py `
+  --outcomes artifacts/rl_router/metaqa_2hop_train.jsonl `
+  --output artifacts/rl_router/metaqa_2hop_bandit.json
+```
+
+The full explanation of the architecture, cost/reward design, algorithm, and
+how to inspect results is in `docs/12-three-route-rl-router.md` through
+`docs/16-rl-running-and-checking-results.md`.

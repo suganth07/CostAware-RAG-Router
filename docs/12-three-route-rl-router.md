@@ -77,9 +77,10 @@ python scripts/build_route_outcomes.py `
   --output artifacts/rl_router/metaqa_2hop_smoke.jsonl
 ```
 
-The smoke command always loads the complete MetaQA graph, but limits Hybrid
-RAG's fact-document index. It verifies software wiring only; do not quote its
-quality numbers because Hybrid RAG has a deliberately incomplete text corpus.
+The smoke command always loads the complete MetaQA graph, but limits the
+Hybrid-RAG and GraphRAG fact-document indexes. It verifies software wiring
+only; do not quote its quality numbers because the text-retrieval routes have a
+deliberately incomplete source corpus.
 
 ### Reportable training collection
 

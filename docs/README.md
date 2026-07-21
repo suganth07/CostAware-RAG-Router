@@ -15,6 +15,10 @@ details. Start with the overview, then follow the numbered guides.
 10. [Codebase tour](10-codebase-tour.md) — modules, interfaces, storage, updates, and extension points.
 11. [Performance and storage](11-performance-and-storage.md) — measured latency, optimizations, and when Qdrant helps.
 12. [Three-route RL router](12-three-route-rl-router.md) — R-GCN-free Hybrid/Graph/Optimized comparison and contextual-bandit training.
+13. [RL pipeline and intuition](13-rl-router-pipeline-and-intuition.md) — why the router exists and how data flows through it.
+14. [RL outcomes, quality, cost, and reward](14-rl-outcomes-quality-cost-and-reward.md) — training-data schema and the quality-first objective.
+15. [Contextual-bandit algorithm](15-contextual-bandit-algorithm.md) — policy mathematics, training, and limitations.
+16. [Running and checking RL results](16-rl-running-and-checking-results.md) — commands, verification checks, and troubleshooting.
 
 ## One-sentence description
 
@@ -1022,5 +1026,4 @@ if __name__ == "__main__":
     main()
 
 ```
-
 
