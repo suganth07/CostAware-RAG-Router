@@ -1,0 +1,109 @@
+{
+  "dataset": "metaqa_2hop",
+  "questions": 500,
+  "warm_query_cache": true,
+  "max_hops": 3,
+  "normal_vector_index": "artifacts\\cache\\vector_indexes\\c5bdd9ea473372c9b9a64e7601c61f74fec55d5dcc5b2b7647aa5287af071533",
+  "systems": {
+    "optimized_grag": {
+      "index_seconds": 11.851033299999472,
+      "index_report": {
+        "documents": 0,
+        "chunks": 0,
+        "graph_nodes": 40124,
+        "graph_edges": 134741,
+        "vectors": 0,
+        "capsules": 13717,
+        "capsule_edges": 89402,
+        "details": {
+          "capsule_build": {
+            "hub_threshold": 17.0,
+            "hub_count": 2145,
+            "region_count": 3895,
+            "capsule_count": 13717,
+            "coverage_capsule_count": 6460,
+            "covered_node_count": 40124,
+            "uncovered_node_count": 0,
+            "node_coverage_rate": 1.0,
+            "construction_schema_version": 3
+          },
+          "capsule_index": {
+            "retrieval_mode": "trained_semantic_projection",
+            "summary_embeddings_skipped": true
+          },
+          "trained_capsule_match_rate": 1.0,
+          "trained_structural_space_enabled": true,
+          "runtime_capsule_fingerprint": "4431de56fb5f7c3cf5b61c4c0acb28ad7862ff0247138f65ec12d4eba6631a40",
+          "artifact_capsule_fingerprint": "4431de56fb5f7c3cf5b61c4c0acb28ad7862ff0247138f65ec12d4eba6631a40"
+        }
+      },
+      "config": {
+        "chunk_size": 900,
+        "chunk_overlap": 120,
+        "max_region_nodes": 1000,
+        "max_capsule_nodes": 250,
+        "max_capsule_edges": 900,
+        "max_hops": 2,
+        "hub_percentile": 95.0,
+        "max_hub_neighbors": 20,
+        "max_overlap_ratio": 0.15,
+        "anchors_per_region": 5,
+        "max_capsules_per_region": 5,
+        "ensure_node_coverage": true,
+        "first_stage_candidate_capsules": 100,
+        "top_k_capsules": 12,
+        "max_merged_nodes": 2400,
+        "max_candidate_paths": 11,
+        "max_path_length": 3,
+        "final_paths_to_llm": 11,
+        "max_seed_neighbors": 200,
+        "seed_expansion_depth": 3,
+        "max_seed_expansion_nodes": 6000,
+        "direct_seed_path_search": true,
+        "exact_seed_capsule_routing": true,
+        "snippets_per_capsule": 3,
+        "max_source_snippets": 24,
+        "max_context_chars": 12000,
+        "system_prompt": "You answer questions using compact graph capsule evidence. Use only the supplied evidence; if it is insufficient, say what is missing."
+      },
+      "stage_ms": {
+        "bounded_path_search": {
+          "mean": 7.760227999973722,
+          "p50": 7.387399999970512,
+          "p95": 16.18380000036268,
+          "max": 24.990900000375404
+        },
+        "build_context": {
+          "mean": 0.1917812000374397,
+          "p50": 0.1857999995991122,
+          "p95": 0.3281999997852836,
+          "max": 0.5516999999599648
+        },
+        "embed_query": {
+          "mean": 1.2756808000267483,
+          "p50": 1.2434000000212109,
+          "p95": 1.8475000006219489,
+          "max": 11.724199999662233
+        },
+        "extract_query_entities": {
+          "mean": 0.038849600015964825,
+          "p50": 0.03639999977167463,
+          "p95": 0.06589999975403771,
+          "max": 0.10070000007544877
+        },
+        "route_capsules": {
+          "mean": 0.10421459999815852,
+          "p50": 0.07839999943826115,
+          "p95": 0.2531000000089989,
+          "max": 0.514600000315113
+        },
+        "total": {
+          "mean": 9.464922000019214,
+          "p50": 9.099500000047556,
+          "p95": 18.13899999979185,
+          "max": 27.148699999997916
+        }
+      }
+    }
+  }
+}

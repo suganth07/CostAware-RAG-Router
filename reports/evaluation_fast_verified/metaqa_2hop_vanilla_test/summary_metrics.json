@@ -1,0 +1,30 @@
+{
+  "systems": {
+    "optimized_grag": {
+      "answer_recall_at_1": 0.478,
+      "answer_recall_at_10": 0.736,
+      "answer_recall_at_20": 0.736,
+      "answer_recall_at_3": 0.524,
+      "answer_recall_at_5": 0.612,
+      "context_answer_recall": 0.82,
+      "evidence_mrr": 0.5259174603174602,
+      "evidence_recall_at_1": 0.22427510281298782,
+      "evidence_recall_at_10": 0.5452791504249099,
+      "evidence_recall_at_20": 0.54567915042491,
+      "evidence_recall_at_3": 0.2622751028129878,
+      "evidence_recall_at_5": 0.3644542236921087,
+      "latency_seconds": 0.007143843800016839,
+      "supporting_evidence_recall": 0.54567915042491,
+      "queries": 500,
+      "latency_p50_seconds": 0.006894099999954051,
+      "latency_p95_seconds": 0.014258500000323693,
+      "mean_context_chars": 5591.458,
+      "mean_retrieved_units": 9.694,
+      "mean_selected_capsules": 12.0,
+      "cache_hit_rate": 0.0,
+      "answer_kind_counts": {
+        "span": 500
+      }
+    }
+  }
+}

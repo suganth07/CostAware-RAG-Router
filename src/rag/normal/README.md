@@ -1,0 +1,1 @@
+- Typical RAG with reusable chunking, embeddings, vector storage, retrieval, and answer generation.

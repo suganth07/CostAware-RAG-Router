@@ -1,0 +1,49 @@
+# Local datasets and generated runtime state
+/data/
+/artifacts/cache/
+/logs/
+**/logs/
+
+# Keep trained artifacts under artifacts/rgcn, but never commit transient DB files
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+
+# Large, reproducible per-query evaluation outputs
+reports/**/retrieval_records.jsonl
+reports/**/query_metrics.csv
+reports/**/query_results.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+build/
+dist/
+*.egg-info/
+
+# Virtual environments and local secrets
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Jupyter, editors, and operating-system files
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Generated documentation bundle (the canonical files live in docs/)
+/docs.zip

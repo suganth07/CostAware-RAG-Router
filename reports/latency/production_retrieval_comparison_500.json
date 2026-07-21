@@ -1,0 +1,185 @@
+{
+  "dataset": "metaqa_2hop",
+  "questions": 500,
+  "warm_query_cache": true,
+  "max_hops": 3,
+  "normal_vector_index": "artifacts\\cache\\vector_indexes\\0d459fcb2bdaca1c521a4b15d0c91f52706364cbef0edfe78fe42a99d7adc038",
+  "systems": {
+    "normal_grag": {
+      "index_seconds": 1.9466486000001169,
+      "index_report": {
+        "documents": 134741,
+        "chunks": 134741,
+        "graph_nodes": 40124,
+        "graph_edges": 134741,
+        "vectors": 134741,
+        "embedded_vectors": 0,
+        "cached_vectors": 134741
+      },
+      "config": {
+        "chunk_size": 900,
+        "chunk_overlap": 120,
+        "top_k": 12,
+        "vector_candidate_k": 64,
+        "vector_seed_k": 12,
+        "max_vector_seed_entities": 64,
+        "graph_depth": 3,
+        "graph_limit": 1200,
+        "ranked_graph_limit": 240,
+        "index_batch_size": 2048,
+        "max_context_chars": 12000,
+        "system_prompt": "You answer questions using only the supplied vector and graph context. If the context is insufficient, say what is missing."
+      },
+      "stage_ms": {
+        "build_context": {
+          "mean": 0.2599605999967025,
+          "p50": 0.25300000015704427,
+          "p95": 0.339299998813658,
+          "max": 0.5387000001064735
+        },
+        "dense_candidate_search": {
+          "mean": 10.965417800020077,
+          "p50": 10.871700000279816,
+          "p95": 12.34649999969406,
+          "max": 15.803099999175174
+        },
+        "embed_query": {
+          "mean": 1.1146602000262646,
+          "p50": 1.0407999998278683,
+          "p95": 1.5554000001429813,
+          "max": 3.816099999312428
+        },
+        "extract_query_entities": {
+          "mean": 0.028201999954035273,
+          "p50": 0.02600000152597204,
+          "p95": 0.03870000000461005,
+          "max": 0.1695000009931391
+        },
+        "graph_expand": {
+          "mean": 2.5804353999483283,
+          "p50": 2.582899998742505,
+          "p95": 3.517400000419002,
+          "max": 4.572900001221569
+        },
+        "rank_graph_evidence": {
+          "mean": 15.032032600000093,
+          "p50": 13.206599998738966,
+          "p95": 16.877500000191503,
+          "max": 377.9783000009047
+        },
+        "rank_vector_evidence": {
+          "mean": 0.6112016000151925,
+          "p50": 0.5793000000267057,
+          "p95": 0.9410000002390007,
+          "max": 1.1943999998038635
+        },
+        "total": {
+          "mean": 30.740101999992476,
+          "p50": 28.926299999511684,
+          "p95": 33.64789999977802,
+          "max": 394.224599998779
+        }
+      }
+    },
+    "optimized_grag": {
+      "index_seconds": 10.961060100000395,
+      "index_report": {
+        "documents": 0,
+        "chunks": 0,
+        "graph_nodes": 40124,
+        "graph_edges": 134741,
+        "vectors": 0,
+        "capsules": 13717,
+        "capsule_edges": 89402,
+        "details": {
+          "capsule_build": {
+            "hub_threshold": 17.0,
+            "hub_count": 2145,
+            "region_count": 3895,
+            "capsule_count": 13717,
+            "coverage_capsule_count": 6460,
+            "covered_node_count": 40124,
+            "uncovered_node_count": 0,
+            "node_coverage_rate": 1.0,
+            "construction_schema_version": 3
+          },
+          "capsule_index": {
+            "retrieval_mode": "trained_semantic_projection",
+            "summary_embeddings_skipped": true
+          },
+          "trained_capsule_match_rate": 1.0,
+          "trained_structural_space_enabled": true,
+          "runtime_capsule_fingerprint": "4431de56fb5f7c3cf5b61c4c0acb28ad7862ff0247138f65ec12d4eba6631a40",
+          "artifact_capsule_fingerprint": "4431de56fb5f7c3cf5b61c4c0acb28ad7862ff0247138f65ec12d4eba6631a40"
+        }
+      },
+      "config": {
+        "chunk_size": 900,
+        "chunk_overlap": 120,
+        "max_region_nodes": 1000,
+        "max_capsule_nodes": 250,
+        "max_capsule_edges": 900,
+        "max_hops": 2,
+        "hub_percentile": 95.0,
+        "max_hub_neighbors": 20,
+        "max_overlap_ratio": 0.15,
+        "anchors_per_region": 5,
+        "max_capsules_per_region": 5,
+        "ensure_node_coverage": true,
+        "first_stage_candidate_capsules": 100,
+        "top_k_capsules": 12,
+        "max_merged_nodes": 2400,
+        "max_candidate_paths": 11,
+        "max_path_length": 3,
+        "final_paths_to_llm": 11,
+        "max_seed_neighbors": 200,
+        "seed_expansion_depth": 3,
+        "max_seed_expansion_nodes": 6000,
+        "direct_seed_path_search": true,
+        "exact_seed_capsule_routing": true,
+        "snippets_per_capsule": 3,
+        "max_source_snippets": 24,
+        "max_context_chars": 12000,
+        "system_prompt": "You answer questions using compact graph capsule evidence. Use only the supplied evidence; if it is insufficient, say what is missing."
+      },
+      "stage_ms": {
+        "bounded_path_search": {
+          "mean": 6.700712400004704,
+          "p50": 6.693200000881916,
+          "p95": 13.631699999677949,
+          "max": 53.33280000013474
+        },
+        "build_context": {
+          "mean": 0.1461197999997239,
+          "p50": 0.1343000003544148,
+          "p95": 0.22630000057688449,
+          "max": 0.5352000007405877
+        },
+        "embed_query": {
+          "mean": 0.9872134000288497,
+          "p50": 0.9654000004957197,
+          "p95": 1.5505000010307413,
+          "max": 2.792500001305598
+        },
+        "extract_query_entities": {
+          "mean": 0.03215379999164725,
+          "p50": 0.02950000089185778,
+          "p95": 0.049199999921256676,
+          "max": 0.08749999869905878
+        },
+        "route_capsules": {
+          "mean": 0.09171919999425882,
+          "p50": 0.06819999907747842,
+          "p95": 0.20399999993969686,
+          "max": 0.6247999990591779
+        },
+        "total": {
+          "mean": 8.031029799909447,
+          "p50": 7.9519999999320135,
+          "p95": 14.997899999798392,
+          "max": 54.874999999810825
+        }
+      }
+    }
+  }
+}

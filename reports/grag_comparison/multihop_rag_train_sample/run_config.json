@@ -1,0 +1,47 @@
+{
+  "dataset": {
+    "label": "MultiHop-RAG train sample",
+    "artifact_name": "multihop_rag_train_sample",
+    "adapter_name": "multihop_rag",
+    "adapter_kwargs": {
+      "split": "train"
+    },
+    "limit_documents": 1000,
+    "limit_eval_samples": 200,
+    "max_eval_questions": 40,
+    "index_native_graph_for_optimized": false,
+    "normal_config": {
+      "chunk_size": 850,
+      "chunk_overlap": 100,
+      "top_k": 5,
+      "graph_depth": 3,
+      "graph_limit": 80
+    },
+    "optimized_config": {
+      "chunk_size": 850,
+      "chunk_overlap": 100,
+      "max_region_nodes": 700,
+      "max_capsule_nodes": 180,
+      "max_capsule_edges": 650,
+      "anchors_per_region": 4,
+      "max_capsules_per_region": 4,
+      "first_stage_candidate_capsules": 100,
+      "top_k_capsules": 10,
+      "max_candidate_paths": 200,
+      "max_path_length": 3,
+      "seed_expansion_depth": 3,
+      "final_paths_to_llm": 12
+    }
+  },
+  "embedding_model": "nomic-embed-text",
+  "llm_model": "qwen3:4b-instruct",
+  "run_generation": false,
+  "max_workers": 1,
+  "max_retrieval_hops": 3,
+  "relative": {
+    "latency_speedup_normal_over_optimized": 5.540883566185664,
+    "context_char_reduction": -0.12153520742693313,
+    "graph_node_reduction": -0.31053952321204514,
+    "context_hit_delta": -0.04999999999999999
+  }
+}

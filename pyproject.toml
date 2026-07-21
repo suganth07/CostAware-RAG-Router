@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grag-rag-experiments"
+version = "0.1.0"
+description = "RAG, GraphRAG, optimized GraphRAG, and routing experiments for multi-hop QA datasets."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+datasets = [
+    "datasets>=2.20.0",
+    "tzdata>=2024.1",
+]
+graph = [
+    "neo4j>=5.20.0",
+]
+vector = [
+    "qdrant-client>=1.9.0",
+]
+models = [
+    "numpy>=1.26.0",
+    "pandas>=2.2.0",
+    "matplotlib>=3.8.0",
+    "torch>=2.2.0",
+    "notebook>=7.0.0",
+    "tqdm>=4.66.0",
+]
+dev = [
+    "pytest>=8.2.0",
+]
+all = [
+    "datasets>=2.20.0",
+    "tzdata>=2024.1",
+    "neo4j>=5.20.0",
+    "qdrant-client>=1.9.0",
+    "numpy>=1.26.0",
+    "pandas>=2.2.0",
+    "matplotlib>=3.8.0",
+    "torch>=2.2.0",
+    "notebook>=7.0.0",
+    "tqdm>=4.66.0",
+    "pytest>=8.2.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["logger*", "src*"]
+exclude = ["data*", "tests*", "logs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "smoke_*.py"]

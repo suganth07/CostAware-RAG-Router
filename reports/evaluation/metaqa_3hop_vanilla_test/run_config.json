@@ -1,0 +1,129 @@
+{
+  "dataset": "metaqa_3hop",
+  "dataset_config": {
+    "label": "MetaQA 3-hop vanilla test",
+    "artifact_name": "metaqa_unified_vanilla_train",
+    "structural_artifact_name": "metaqa_shared_graph_train",
+    "report_name": "metaqa_3hop_vanilla_test",
+    "adapter_name": "metaqa",
+    "adapter_kwargs": {
+      "hop": "3-hop",
+      "variant": "vanilla",
+      "split": "test"
+    },
+    "limit_documents": null,
+    "limit_eval_samples": 500,
+    "max_eval_questions": 500,
+    "native_graph_only": true,
+    "min_answer_coverage": 0.99,
+    "retrieval_max_hops": 3,
+    "normal_config": {
+      "chunk_size": 900,
+      "chunk_overlap": 120,
+      "top_k": 5,
+      "graph_depth": 3,
+      "graph_limit": 450,
+      "max_context_chars": 12000,
+      "system_prompt": "You answer questions using only the supplied vector and graph context. If the context is insufficient, say what is missing."
+    },
+    "optimized_config": {
+      "chunk_size": 900,
+      "chunk_overlap": 120,
+      "max_region_nodes": 1000,
+      "max_capsule_nodes": 250,
+      "max_capsule_edges": 900,
+      "max_hops": 2,
+      "hub_percentile": 95.0,
+      "max_hub_neighbors": 20,
+      "max_overlap_ratio": 0.15,
+      "anchors_per_region": 5,
+      "max_capsules_per_region": 5,
+      "ensure_node_coverage": true,
+      "first_stage_candidate_capsules": 100,
+      "top_k_capsules": 12,
+      "max_merged_nodes": 2400,
+      "max_candidate_paths": 500,
+      "max_path_length": 3,
+      "final_paths_to_llm": 50,
+      "max_seed_neighbors": 200,
+      "seed_expansion_depth": 3,
+      "max_seed_expansion_nodes": 6000,
+      "snippets_per_capsule": 3,
+      "max_source_snippets": 24,
+      "max_context_chars": 12000,
+      "system_prompt": "You answer questions using compact graph capsule evidence. Use only the supplied evidence; if it is insufficient, say what is missing."
+    }
+  },
+  "systems": [
+    "normal_grag",
+    "optimized_grag"
+  ],
+  "questions": 100,
+  "full_eval": false,
+  "retrieval_max_hops": 3,
+  "runtime_configs": {
+    "normal_grag": {
+      "chunk_size": 900,
+      "chunk_overlap": 120,
+      "top_k": 5,
+      "graph_depth": 3,
+      "graph_limit": 450,
+      "max_context_chars": 12000,
+      "system_prompt": "You answer questions using only the supplied vector and graph context. If the context is insufficient, say what is missing."
+    },
+    "optimized_grag": {
+      "chunk_size": 900,
+      "chunk_overlap": 120,
+      "max_region_nodes": 1000,
+      "max_capsule_nodes": 250,
+      "max_capsule_edges": 900,
+      "max_hops": 2,
+      "hub_percentile": 95.0,
+      "max_hub_neighbors": 20,
+      "max_overlap_ratio": 0.15,
+      "anchors_per_region": 5,
+      "max_capsules_per_region": 5,
+      "ensure_node_coverage": true,
+      "first_stage_candidate_capsules": 100,
+      "top_k_capsules": 12,
+      "max_merged_nodes": 2400,
+      "max_candidate_paths": 500,
+      "max_path_length": 3,
+      "final_paths_to_llm": 50,
+      "max_seed_neighbors": 200,
+      "seed_expansion_depth": 3,
+      "max_seed_expansion_nodes": 6000,
+      "snippets_per_capsule": 3,
+      "max_source_snippets": 24,
+      "max_context_chars": 12000,
+      "system_prompt": "You answer questions using compact graph capsule evidence. Use only the supplied evidence; if it is insufficient, say what is missing."
+    }
+  },
+  "run_generation": false,
+  "embedding_model": "nomic-embed-text",
+  "llm_model": "qwen3:4b-instruct",
+  "bundle_fingerprint": "c540db501e77a196007814f3e877153d2b45ece0e1078fe781eeeb6c41675299",
+  "source_fingerprint": "3c0977936c68269fb46010b497476e760a664a4725dc6d426e6913a9f268f536",
+  "run_fingerprints": {
+    "normal_grag": "52163ee98376da9e5f7265d9d3a3c06a716df27211a9d0db408859e5f364ca8f",
+    "optimized_grag": "06d1b73c6a03564a1506d30a796d99b9bdc0f26981cf4c9f136258f5f14f5b20"
+  },
+  "index": {
+    "normal_grag": {
+      "cache_skipped": false,
+      "seconds": 0.15677609998965636,
+      "report": {
+        "documents": 0,
+        "chunks": 0,
+        "graph_nodes": 40124,
+        "graph_edges": 134741,
+        "vectors": 0
+      }
+    },
+    "optimized_grag": {
+      "cache_skipped": true,
+      "seconds": 0.0,
+      "report": null
+    }
+  }
+}

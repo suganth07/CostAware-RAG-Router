@@ -1,0 +1,3 @@
+system,queries,mean_latency_s,p50_latency_s,p95_latency_s,context_answer_hit_rate,span_context_answer_hit_rate,mean_context_chars,mean_selected_units,mean_graph_nodes,mean_graph_edges,mean_evidence_paths
+normal_grag,500,0.052404719999998635,0.04984569999942323,0.07437930000014603,0.672,0.672,11967.544,12.0,226.2,240.0,0.0
+optimized_grag,500,0.014238045200007036,0.013699600001018553,0.026196499999059597,0.61,0.61,5900.96,12.0,194.058,355.414,10.932

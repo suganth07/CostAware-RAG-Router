@@ -1,0 +1,3 @@
+system,index_seconds,documents,chunks,graph_nodes,graph_edges,vectors,capsules,capsule_edges,trained_capsule_match_rate
+normal_grag,3.446231899999475,134741,134741,40124,134741,134741,0,0,
+optimized_grag,38.11538169999949,0,0,40124,134741,0,13717,89402,1.0

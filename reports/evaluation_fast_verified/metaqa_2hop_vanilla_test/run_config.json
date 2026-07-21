@@ -1,0 +1,153 @@
+{
+  "dataset": "metaqa_2hop",
+  "dataset_config": {
+    "label": "MetaQA 2-hop vanilla test",
+    "artifact_name": "metaqa_unified_vanilla_train",
+    "structural_artifact_name": "metaqa_shared_graph_train",
+    "report_name": "metaqa_2hop_vanilla_test",
+    "adapter_name": "metaqa",
+    "adapter_kwargs": {
+      "hop": "2-hop",
+      "variant": "vanilla",
+      "split": "test"
+    },
+    "limit_documents": null,
+    "limit_eval_samples": 500,
+    "max_eval_questions": 500,
+    "native_graph_only": true,
+    "normal_index_documents": true,
+    "min_answer_coverage": 0.99,
+    "retrieval_max_hops": 3,
+    "normal_config": {
+      "chunk_size": 900,
+      "chunk_overlap": 120,
+      "top_k": 12,
+      "vector_candidate_k": 64,
+      "vector_seed_k": 12,
+      "max_vector_seed_entities": 64,
+      "graph_depth": 3,
+      "graph_limit": 1200,
+      "ranked_graph_limit": 240,
+      "index_batch_size": 2048,
+      "max_context_chars": 12000,
+      "system_prompt": "You answer questions using only the supplied vector and graph context. If the context is insufficient, say what is missing."
+    },
+    "optimized_config": {
+      "chunk_size": 900,
+      "chunk_overlap": 120,
+      "max_region_nodes": 1000,
+      "max_capsule_nodes": 250,
+      "max_capsule_edges": 900,
+      "max_hops": 2,
+      "hub_percentile": 95.0,
+      "max_hub_neighbors": 20,
+      "max_overlap_ratio": 0.15,
+      "anchors_per_region": 5,
+      "max_capsules_per_region": 5,
+      "ensure_node_coverage": true,
+      "first_stage_candidate_capsules": 100,
+      "top_k_capsules": 12,
+      "max_merged_nodes": 2400,
+      "max_candidate_paths": 500,
+      "max_path_length": 3,
+      "final_paths_to_llm": 50,
+      "max_seed_neighbors": 200,
+      "seed_expansion_depth": 3,
+      "max_seed_expansion_nodes": 6000,
+      "direct_seed_path_search": true,
+      "exact_seed_capsule_routing": true,
+      "snippets_per_capsule": 3,
+      "max_source_snippets": 24,
+      "max_context_chars": 12000,
+      "system_prompt": "You answer questions using compact graph capsule evidence. Use only the supplied evidence; if it is insufficient, say what is missing."
+    }
+  },
+  "systems": [
+    "optimized_grag"
+  ],
+  "questions": 500,
+  "full_eval": false,
+  "retrieval_max_hops": 3,
+  "runtime_configs": {
+    "optimized_grag": {
+      "chunk_size": 900,
+      "chunk_overlap": 120,
+      "max_region_nodes": 1000,
+      "max_capsule_nodes": 250,
+      "max_capsule_edges": 900,
+      "max_hops": 2,
+      "hub_percentile": 95.0,
+      "max_hub_neighbors": 20,
+      "max_overlap_ratio": 0.15,
+      "anchors_per_region": 5,
+      "max_capsules_per_region": 5,
+      "ensure_node_coverage": true,
+      "first_stage_candidate_capsules": 100,
+      "top_k_capsules": 12,
+      "max_merged_nodes": 2400,
+      "max_candidate_paths": 11,
+      "max_path_length": 3,
+      "final_paths_to_llm": 11,
+      "max_seed_neighbors": 200,
+      "seed_expansion_depth": 3,
+      "max_seed_expansion_nodes": 6000,
+      "direct_seed_path_search": true,
+      "exact_seed_capsule_routing": true,
+      "snippets_per_capsule": 3,
+      "max_source_snippets": 24,
+      "max_context_chars": 12000,
+      "system_prompt": "You answer questions using compact graph capsule evidence. Use only the supplied evidence; if it is insufficient, say what is missing."
+    }
+  },
+  "run_generation": false,
+  "embedding_model": "nomic-embed-text",
+  "embedding_backend": "ollama",
+  "embedding_namespace": "ollama:http://localhost:11434:nomic-embed-text:{\"num_gpu\": 999}",
+  "llm_model": "qwen3:4b-instruct",
+  "bundle_fingerprint": "ae68a6fee9362d306c61f2a5f4553fa75099820ffde336f8a5148aabc5eea8b9",
+  "corpus_fingerprint": "cb365a919a34c82cf3c2bc153d55e9bd3cba8bc1854c69d7639070cbd0d88b92",
+  "source_fingerprint": "7e1b132c66d5f87c448ce283c2655ea761512d1a1c1457d0adb2eb077484ee57",
+  "normal_vector_index": {
+    "fingerprint": "c5bdd9ea473372c9b9a64e7601c61f74fec55d5dcc5b2b7647aa5287af071533",
+    "directory": "artifacts\\cache\\vector_indexes\\c5bdd9ea473372c9b9a64e7601c61f74fec55d5dcc5b2b7647aa5287af071533"
+  },
+  "run_fingerprints": {
+    "optimized_grag": "c3d31f5b2fda0a5110e841e5ac7e31e8acb7a2c1438a201ae9cf42f569332a5c"
+  },
+  "index": {
+    "optimized_grag": {
+      "cache_skipped": false,
+      "seconds": 9.24439319999965,
+      "report": {
+        "documents": 0,
+        "chunks": 0,
+        "graph_nodes": 40124,
+        "graph_edges": 134741,
+        "vectors": 0,
+        "capsules": 13717,
+        "capsule_edges": 89402,
+        "details": {
+          "capsule_build": {
+            "hub_threshold": 17.0,
+            "hub_count": 2145,
+            "region_count": 3895,
+            "capsule_count": 13717,
+            "coverage_capsule_count": 6460,
+            "covered_node_count": 40124,
+            "uncovered_node_count": 0,
+            "node_coverage_rate": 1.0,
+            "construction_schema_version": 3
+          },
+          "capsule_index": {
+            "retrieval_mode": "trained_semantic_projection",
+            "summary_embeddings_skipped": true
+          },
+          "trained_capsule_match_rate": 1.0,
+          "trained_structural_space_enabled": true,
+          "runtime_capsule_fingerprint": "4431de56fb5f7c3cf5b61c4c0acb28ad7862ff0247138f65ec12d4eba6631a40",
+          "artifact_capsule_fingerprint": "4431de56fb5f7c3cf5b61c4c0acb28ad7862ff0247138f65ec12d4eba6631a40"
+        }
+      }
+    }
+  }
+}
