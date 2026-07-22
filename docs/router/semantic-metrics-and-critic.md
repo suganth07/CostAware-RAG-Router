@@ -75,6 +75,31 @@ joined into a promoted reward/training artifact. Until then the existing
 unconstrained training JSONL remains the correct artifact for inspecting full
 information outcomes, not for training the final learned router.
 
+`scripts/router/analyze_critics.py` generates both an aggregate JSON report
+and a balanced blind-review queue. The queue omits the candidate ID so a human
+reviewer sees the same information as the critic without being biased by the
+route name. Fill in its `human_review_template` fields before deciding whether
+to calibrate or promote the critic.
+
+The audit reports two deterministic diagnostics. Exact-match agreement is
+intentionally narrow. Accepted-answer coverage additionally checks whether a
+verbose generated answer contains every expected answer, which is necessary
+for MetaQA multi-answer questions such as an answer sentence containing two
+correct actor names.
+
+### Current pilot decision
+
+The `router-critic-v1` pilot must **not** be promoted into the reward. Its
+audit showed zero precision against the deterministic exact-match proxy and a
+34% empty-taxonomy repair rate, concentrated in GraphRAG outcomes. Version 2
+therefore makes an explicit distinction between global correctness against
+accepted answers and groundedness in the retrieved context. Version 3 makes
+this separation operational through two candidate-blind judge calls: the
+correctness call has no retrieved context, while the grounding call has no
+accepted answers. It must be
+collected into a new artifact and audited separately; never mix versions in a
+training dataset.
+
 ## 4. Why this comes before the bandit
 
 A contextual bandit can only learn the preferences encoded in its reward. If

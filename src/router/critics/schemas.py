@@ -12,6 +12,8 @@ FAILURE_TYPES = frozenset({
     "incomplete_answer",
     "irrelevant_answer",
     "unanswerable_from_context",
+    "insufficient_evidence",
+    "missing_release_year",
     "execution_failure",
     "other",
 })
@@ -24,6 +26,7 @@ SCORE_FIELDS = (
     "confidence",
 )
 LIST_FIELDS = ("supporting_claims", "unsupported_claims", "missing_information")
+ANSWER_FIELDS = ("correctness", "answer_relevance", "confidence")
 
 
 class CritiqueParseError(ValueError):
@@ -66,6 +69,31 @@ def parse_critique(text: str) -> dict[str, Any]:
     for field in LIST_FIELDS:
         if not isinstance(value[field], list) or not all(isinstance(item, str) for item in value[field]):
             raise CritiqueParseError(f"{field} must be an array of strings")
+    if not isinstance(value["critique"], str):
+        raise CritiqueParseError("critique must be a string")
+    return value
+
+
+def parse_answer_critique(text: str) -> dict[str, Any]:
+    """Validate the small, context-free global-correctness judgement."""
+    try:
+        value = json.loads(_strip_fence(text))
+    except json.JSONDecodeError as exc:
+        raise CritiqueParseError(f"Answer judge did not return valid JSON: {exc.msg}") from exc
+    required = set(ANSWER_FIELDS) | {"failure_type", "critique"}
+    if not isinstance(value, dict) or set(value) != required:
+        raise CritiqueParseError("Answer judge schema keys do not match the required contract")
+    for field in ANSWER_FIELDS:
+        score = value[field]
+        if isinstance(score, bool) or not isinstance(score, (int, float)) or not 0.0 <= float(score) <= 1.0:
+            raise CritiqueParseError(f"{field} must be a number in [0, 1]")
+        value[field] = float(score)
+    value["failure_type_normalized"] = False
+    if value["failure_type"] == "":
+        value["failure_type"] = "other"
+        value["failure_type_normalized"] = True
+    elif value["failure_type"] not in FAILURE_TYPES:
+        raise CritiqueParseError(f"Unsupported failure_type: {value['failure_type']!r}")
     if not isinstance(value["critique"], str):
         raise CritiqueParseError("critique must be a string")
     return value

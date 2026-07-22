@@ -9,6 +9,7 @@ Read in this order:
 5. [Training roadmap](training.md)
 6. [Evaluation rules](evaluation.md)
 7. [Operations](operations.md)
+8. [Plan implementation progress](plan-progress.md)
 
 The full long-range design remains in [../plan.md](../plan.md). The code in
 `src/router` currently implements the contracts, collection/scoring core, and

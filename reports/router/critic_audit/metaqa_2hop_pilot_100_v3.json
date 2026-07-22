@@ -1,0 +1,324 @@
+{
+  "overall": {
+    "critic_records": 100,
+    "actions": [
+      "hybrid_rag",
+      "graph_rag",
+      "optimized_graph_rag"
+    ],
+    "action_coverage": {
+      "graph_rag": 34,
+      "hybrid_rag": 33,
+      "optimized_graph_rag": 33
+    },
+    "failure_type_normalized_count": 0,
+    "failure_type_distribution": {
+      "incorrect_answer": 22,
+      "unanswerable_from_context": 55,
+      "none": 23
+    },
+    "judge_models": [
+      "qwen3:4b-instruct"
+    ],
+    "prompt_versions": [
+      "router-critic-v3-two-pass"
+    ],
+    "judge_run_ids": [
+      "critic-9cb8f26bfbdf"
+    ],
+    "correctness_threshold": 0.5,
+    "join_missing": 0
+  },
+  "per_action": {
+    "hybrid_rag": {
+      "records": 33,
+      "failure_type_distribution": {
+        "unanswerable_from_context": 31,
+        "none": 2
+      },
+      "failure_type_normalized_count": 0,
+      "score_distribution": {
+        "correctness": {
+          "count": 33,
+          "mean": 0.06060606060606061,
+          "p50": 0.0,
+          "p95": 0.0,
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "groundedness": {
+          "count": 33,
+          "mean": 1.0,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 1.0,
+          "maximum": 1.0
+        },
+        "evidence_completeness": {
+          "count": 33,
+          "mean": 1.0,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 1.0,
+          "maximum": 1.0
+        },
+        "reasoning_completeness": {
+          "count": 33,
+          "mean": 1.0,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 1.0,
+          "maximum": 1.0
+        },
+        "answer_relevance": {
+          "count": 33,
+          "mean": 0.06060606060606061,
+          "p50": 0.0,
+          "p95": 0.0,
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "confidence": {
+          "count": 33,
+          "mean": 0.06060606060606061,
+          "p50": 0.0,
+          "p95": 0.0,
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
+      "hallucination_rate": 0.0,
+      "answerable_from_context_rate": 1.0,
+      "deterministic_exact_match_proxy": {
+        "count": 33,
+        "accuracy": 0.9393939393939394,
+        "precision": 0.0,
+        "recall": null,
+        "positive_labels": 0,
+        "confusion": {
+          "critic_positive_exact_positive": 0,
+          "critic_positive_exact_negative": 2,
+          "critic_negative_exact_positive": 0,
+          "critic_negative_exact_negative": 31
+        }
+      },
+      "accepted_answer_coverage_proxy": {
+        "count": 33,
+        "accuracy": 0.9393939393939394,
+        "precision": 0.0,
+        "recall": null,
+        "positive_labels": 0,
+        "confusion": {
+          "critic_positive_exact_positive": 0,
+          "critic_positive_exact_negative": 2,
+          "critic_negative_exact_positive": 0,
+          "critic_negative_exact_negative": 31
+        }
+      }
+    },
+    "graph_rag": {
+      "records": 34,
+      "failure_type_distribution": {
+        "incorrect_answer": 17,
+        "unanswerable_from_context": 16,
+        "none": 1
+      },
+      "failure_type_normalized_count": 0,
+      "score_distribution": {
+        "correctness": {
+          "count": 34,
+          "mean": 0.029411764705882353,
+          "p50": 0.0,
+          "p95": 0.0,
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "groundedness": {
+          "count": 34,
+          "mean": 0.9876470588235293,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 0.9,
+          "maximum": 1.0
+        },
+        "evidence_completeness": {
+          "count": 34,
+          "mean": 0.9329411764705882,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 0.7,
+          "maximum": 1.0
+        },
+        "reasoning_completeness": {
+          "count": 34,
+          "mean": 0.9605882352941175,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 0.8,
+          "maximum": 1.0
+        },
+        "answer_relevance": {
+          "count": 34,
+          "mean": 0.029411764705882353,
+          "p50": 0.0,
+          "p95": 0.0,
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "confidence": {
+          "count": 34,
+          "mean": 0.02911764705882353,
+          "p50": 0.0,
+          "p95": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.99
+        }
+      },
+      "hallucination_rate": 0.0,
+      "answerable_from_context_rate": 1.0,
+      "deterministic_exact_match_proxy": {
+        "count": 34,
+        "accuracy": 0.9705882352941176,
+        "precision": 0.0,
+        "recall": null,
+        "positive_labels": 0,
+        "confusion": {
+          "critic_positive_exact_positive": 0,
+          "critic_positive_exact_negative": 1,
+          "critic_negative_exact_positive": 0,
+          "critic_negative_exact_negative": 33
+        }
+      },
+      "accepted_answer_coverage_proxy": {
+        "count": 34,
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "positive_labels": 1,
+        "confusion": {
+          "critic_positive_exact_positive": 1,
+          "critic_positive_exact_negative": 0,
+          "critic_negative_exact_positive": 0,
+          "critic_negative_exact_negative": 33
+        }
+      }
+    },
+    "optimized_graph_rag": {
+      "records": 33,
+      "failure_type_distribution": {
+        "none": 20,
+        "incorrect_answer": 5,
+        "unanswerable_from_context": 8
+      },
+      "failure_type_normalized_count": 0,
+      "score_distribution": {
+        "correctness": {
+          "count": 33,
+          "mean": 0.6060606060606061,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "groundedness": {
+          "count": 33,
+          "mean": 0.9787878787878787,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 0.3,
+          "maximum": 1.0
+        },
+        "evidence_completeness": {
+          "count": 33,
+          "mean": 0.9393939393939394,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "reasoning_completeness": {
+          "count": 33,
+          "mean": 0.9484848484848485,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "answer_relevance": {
+          "count": 33,
+          "mean": 0.6060606060606061,
+          "p50": 1.0,
+          "p95": 1.0,
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "confidence": {
+          "count": 33,
+          "mean": 0.6003030303030303,
+          "p50": 0.99,
+          "p95": 1.0,
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      },
+      "hallucination_rate": 0.06060606060606061,
+      "answerable_from_context_rate": 0.8787878787878788,
+      "deterministic_exact_match_proxy": {
+        "count": 33,
+        "accuracy": 0.3939393939393939,
+        "precision": 0.0,
+        "recall": null,
+        "positive_labels": 0,
+        "confusion": {
+          "critic_positive_exact_positive": 0,
+          "critic_positive_exact_negative": 20,
+          "critic_negative_exact_positive": 0,
+          "critic_negative_exact_negative": 13
+        }
+      },
+      "accepted_answer_coverage_proxy": {
+        "count": 33,
+        "accuracy": 0.5454545454545454,
+        "precision": 0.3,
+        "recall": 0.8571428571428571,
+        "positive_labels": 7,
+        "confusion": {
+          "critic_positive_exact_positive": 6,
+          "critic_positive_exact_negative": 14,
+          "critic_negative_exact_positive": 1,
+          "critic_negative_exact_negative": 12
+        }
+      }
+    }
+  },
+  "aggregate_deterministic_exact_match_proxy": {
+    "count": 100,
+    "accuracy": 0.77,
+    "precision": 0.0,
+    "recall": null,
+    "positive_labels": 0,
+    "confusion": {
+      "critic_positive_exact_positive": 0,
+      "critic_positive_exact_negative": 23,
+      "critic_negative_exact_positive": 0,
+      "critic_negative_exact_negative": 77
+    }
+  },
+  "aggregate_accepted_answer_coverage_proxy": {
+    "count": 100,
+    "accuracy": 0.83,
+    "precision": 0.30434782608695654,
+    "recall": 0.875,
+    "positive_labels": 8,
+    "confusion": {
+      "critic_positive_exact_positive": 7,
+      "critic_positive_exact_negative": 16,
+      "critic_negative_exact_positive": 1,
+      "critic_negative_exact_negative": 76
+    }
+  },
+  "promotion_decision": "human_review_required",
+  "warnings": [
+    "Deterministic exact-match agreement is only a proxy, not a human-validity measurement. Do not promote critic scores into RL reward before reviewing the blind review queue."
+  ]
+}

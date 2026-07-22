@@ -62,6 +62,11 @@ def load_calibrations(path: str | Path) -> dict[str, AnswerTypeCalibration]:
         raw = json.load(file)
     if not isinstance(raw, dict):
         raise ValueError("Calibration JSON must be an object keyed by answer type")
+    # Accept the versioned artifact written by fit_embedding_calibration.py as
+    # well as the compact mapping used by early experiments.
+    raw = raw.get("calibrations", raw)
+    if not isinstance(raw, dict):
+        raise ValueError("Calibration artifact must contain an object named 'calibrations'")
     result: dict[str, AnswerTypeCalibration] = {}
     for answer_type, bounds in raw.items():
         if not isinstance(bounds, dict) or set(bounds) != {"low", "high"}:
