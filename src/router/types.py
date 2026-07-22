@@ -98,7 +98,62 @@ class MetricVector:
     answer_completeness: float | None = None
     answer_relevance: float | None = None
     correct_refusal: float | None = None
+    critic_correctness: float | None = None
+    critic_groundedness: float | None = None
+    critic_evidence_completeness: float | None = None
+    critic_reasoning_completeness: float | None = None
+    critic_answer_relevance: float | None = None
+    critic_confidence: float | None = None
+    critic_hallucination_detected: bool | None = None
     failure_penalty: float = 0.0
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(slots=True)
+class CritiqueRecord:
+    """Candidate-blind structured judgement for one generated answer.
+
+    The candidate ID is present only as an artifact join key.  It is never
+    included in the prompt sent to the judge model, so the critic cannot learn
+    a preference for a particular retrieval route.
+    """
+
+    question_id: str
+    candidate_id: str
+    repeat_id: int
+    run_id: str
+    judge_model: str
+    prompt_version: str
+    judge_run_id: str
+    correctness: float
+    groundedness: float
+    evidence_completeness: float
+    reasoning_completeness: float
+    answer_relevance: float
+    answerable_from_context: bool
+    hallucination_detected: bool
+    failure_type: str
+    confidence: float
+    # True only for the narrow, auditable empty-enum repair in the schema
+    # parser. It prevents a malformed taxonomy label from discarding otherwise
+    # valid scalar critic scores.
+    failure_type_normalized: bool = False
+    supporting_claims: list[str] = field(default_factory=list)
+    unsupported_claims: list[str] = field(default_factory=list)
+    missing_information: list[str] = field(default_factory=list)
+    critique: str = ""
+    raw_response_hash: str = ""
+    created_at_utc: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+    def __post_init__(self) -> None:
+        if self.candidate_id not in ACTION_IDS:
+            raise ValueError(f"Unknown candidate_id: {self.candidate_id}")
+
+    @property
+    def key(self) -> tuple[str, str, int, str, str, str]:
+        return (self.question_id, self.candidate_id, self.repeat_id, self.run_id, self.judge_model, self.prompt_version)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

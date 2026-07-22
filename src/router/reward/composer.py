@@ -9,10 +9,26 @@ from src.router.types import CandidateOutcome, MetricVector
 def compose_quality(metrics: MetricVector, *, config: RewardConfig) -> float | None:
     """Compose only available quality blocks; missing signals are never zero-filled."""
     config.validate()
-    answer = _mean_available(metrics.exact_or_alias_match, metrics.token_or_set_f1, metrics.boolean_accuracy, metrics.numeric_date_accuracy)
-    faithfulness = metrics.claim_faithfulness
+    # Raw embedding cosine is intentionally excluded.  Only an answer-type
+    # calibrated value can contribute to quality, and it is overridden to zero
+    # by hard conflicts in the calibration helper.
+    answer = _mean_available(
+        metrics.exact_or_alias_match,
+        metrics.token_or_set_f1,
+        metrics.boolean_accuracy,
+        metrics.numeric_date_accuracy,
+        metrics.semantic_equivalence,
+        metrics.embedding_similarity_calibrated,
+        metrics.critic_correctness,
+    )
+    faithfulness = _mean_available(metrics.claim_faithfulness, metrics.critic_groundedness)
     evidence = _mean_available(metrics.supporting_evidence_recall, metrics.context_precision, metrics.evidence_mrr)
-    completeness = metrics.answer_completeness
+    completeness = _mean_available(
+        metrics.answer_completeness,
+        metrics.critic_evidence_completeness,
+        metrics.critic_reasoning_completeness,
+        metrics.critic_answer_relevance,
+    )
     weighted = (
         (answer, config.answer_weight),
         (faithfulness, config.faithfulness_weight),
@@ -27,6 +43,8 @@ def compose_quality(metrics: MetricVector, *, config: RewardConfig) -> float | N
     if metrics.claim_faithfulness is not None:
         penalty += config.unsupported_penalty * (1.0 - float(metrics.claim_faithfulness))
     penalty += config.execution_failure_penalty * metrics.failure_penalty
+    if metrics.critic_hallucination_detected is True:
+        penalty += config.unsupported_penalty
     if metrics.correct_refusal == 0.0:
         penalty += config.incorrect_refusal_penalty
     if metrics.numeric_conflict or metrics.polarity_conflict:

@@ -268,3 +268,40 @@ Before training a neural policy, inspect the `.manifest.json` and ensure each
 question/repeat appears once for `hybrid_rag`, `graph_rag`, and
 `optimized_graph_rag`. See `docs/router/README.md` for the detailed contracts
 and milestone boundaries.
+
+Audit each pilot before collecting more questions:
+
+```powershell
+python scripts/router/analyze_pilot.py `
+  --scored-outcomes artifacts/router/datasets/metaqa_2hop_pilot_100_scored.jsonl `
+  --repeats 2 `
+  --output reports/router/data_audit/metaqa_2hop_pilot_100.json
+```
+
+## 10. Structured critic pilot (Milestone 3, first step)
+
+The 200-row unconstrained matrix is complete full-information data, but its
+quality labels are still primarily deterministic. Generate a separate,
+candidate-blind 100-record local-LLM critic artifact before training a learned
+policy. The critic sees the question, gold answers/evidence, retrieved
+context, and answer, but never the name of the route that produced it.
+
+```powershell
+ollama pull qwen3:4b-instruct
+
+python scripts/router/score_critics.py `
+  --outcomes artifacts/router/outcomes/metaqa_2hop_pilot_100.jsonl `
+  --questions artifacts/router/outcomes/metaqa_2hop_pilot_100.questions.jsonl `
+  --judge-model qwen3:4b-instruct `
+  --max-records 100 `
+  --output artifacts/router/critiques/metaqa_2hop_pilot_100_critic.jsonl
+```
+
+This produces strict JSON judgments plus an optional failures file. Review a
+random sample before using critic values for reward calibration. Details:
+`docs/router/semantic-metrics-and-critic.md`.
+
+If the command says the connection to `localhost:11434` was refused, launch
+the Ollama service in a separate terminal using `ollama serve` and leave it
+open, then rerun the command. The collector now performs this check before
+creating any judgement rows.

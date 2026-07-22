@@ -11,6 +11,13 @@ Hard numeric/date and boolean-polarity conflicts return quality `-1.0`. This
 prevents future semantic similarity from rewarding an answer with the wrong
 number or polarity.
 
+Raw answer-embedding similarity is recorded only as diagnostics. It enters the
+answer block only after an explicit answer-type calibration is supplied. A
+validated critic can later provide additional correctness, groundedness, and
+completeness fields; a hallucination flag receives the same unsupported-claim
+penalty. Read [Semantic metrics and structured critic](semantic-metrics-and-critic.md)
+before enabling either signal in a reportable reward experiment.
+
 The first reduced compute unit records graph nodes, graph edges, context size,
 and available input/output tokens. GPU/CPU timing can be added later without
 changing the `CandidateOutcome` contract.
