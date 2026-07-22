@@ -1,0 +1,22 @@
+# Configuration values are explicit experiment choices, never hidden in notebooks.
+schema_version: 1
+actions:
+  - hybrid_rag
+  - graph_rag
+  - optimized_graph_rag
+collection:
+  questions: 100
+  repeats: 2
+  stratified: true
+  generation: true
+budgets:
+  # Set these only after measuring warm latency on the target machine.
+  mean_latency_ms: null
+  tail_latency_ms: null
+  compute_units: null
+  max_request_latency_ms: null
+reward:
+  answer_weight: 0.50
+  faithfulness_weight: 0.20
+  evidence_weight: 0.20
+  completeness_weight: 0.10

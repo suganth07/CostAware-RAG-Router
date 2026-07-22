@@ -19,6 +19,7 @@ details. Start with the overview, then follow the numbered guides.
 14. [RL outcomes, quality, cost, and reward](14-rl-outcomes-quality-cost-and-reward.md) — training-data schema and the quality-first objective.
 15. [Contextual-bandit algorithm](15-contextual-bandit-algorithm.md) — policy mathematics, training, and limitations.
 16. [Running and checking RL results](16-rl-running-and-checking-results.md) — commands, verification checks, and troubleshooting.
+17. [Production router implementation](router/README.md) — production contracts, collection, reward, training, evaluation, and operations.
 
 ## One-sentence description
 
@@ -1026,4 +1027,3 @@ if __name__ == "__main__":
     main()
 
 ```
-

@@ -3,6 +3,7 @@
 /artifacts/cache/
 /logs/
 **/logs/
+artifacts/*
 
 # Keep trained artifacts under artifacts/rgcn, but never commit transient DB files
 *.sqlite3-wal

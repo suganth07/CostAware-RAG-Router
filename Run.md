@@ -222,3 +222,49 @@ python scripts/train_cost_aware_router.py `
 The full explanation of the architecture, cost/reward design, algorithm, and
 how to inspect results is in `docs/12-three-route-rl-router.md` through
 `docs/16-rl-running-and-checking-results.md`.
+
+## 9. Production router foundation (plan.md milestones 0–2)
+
+The production foundation uses `src/router/` and a new action name,
+`optimized_graph_rag`, to match `docs/plan.md`. It keeps R-GCN/projector
+artifacts disabled by constructing `FeatureStructuralEncoder` directly.
+
+Run the 100-question, two-repeat pilot collection. It is resumable; rerun the
+same command after interruption and it continues from completed outcomes.
+
+```powershell
+python scripts/router/collect_outcomes.py `
+  --dataset metaqa_2hop `
+  --split train `
+  --max-questions 100 `
+  --repeats 2 `
+  --stratified `
+  --run-generation `
+  --output artifacts/router/outcomes/metaqa_2hop_pilot.jsonl
+```
+
+Score every collected candidate outcome with deterministic, nullable metrics:
+
+```powershell
+python scripts/router/score_outcomes.py `
+  --outcomes artifacts/router/outcomes/metaqa_2hop_pilot.jsonl `
+  --questions artifacts/router/outcomes/metaqa_2hop_pilot.questions.jsonl `
+  --output artifacts/router/datasets/metaqa_2hop_pilot_scored.jsonl
+```
+
+Build the complete budget-aware oracle training matrix. Do not set a production
+budget until you have measured warm latency on your own target hardware; the
+following values are only an example experiment configuration.
+
+```powershell
+python scripts/router/build_training_dataset.py `
+  --scored-outcomes artifacts/router/datasets/metaqa_2hop_pilot_scored.jsonl `
+  --max-request-latency-ms 100 `
+  --compute-budget 1.0 `
+  --output artifacts/router/datasets/metaqa_2hop_pilot_training.jsonl
+```
+
+Before training a neural policy, inspect the `.manifest.json` and ensure each
+question/repeat appears once for `hybrid_rag`, `graph_rag`, and
+`optimized_graph_rag`. See `docs/router/README.md` for the detailed contracts
+and milestone boundaries.
