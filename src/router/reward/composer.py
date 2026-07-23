@@ -2,12 +2,27 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from src.router.config import RewardConfig
 from src.router.types import CandidateOutcome, MetricVector
 
 
+@dataclass(frozen=True, slots=True)
+class QualityComposition:
+    quality: float | None
+    base_quality: float | None
+    penalty: float
+    availability_mask: dict[str, bool]
+
+
 def compose_quality(metrics: MetricVector, *, config: RewardConfig) -> float | None:
-    """Compose only available quality blocks; missing signals are never zero-filled."""
+    """Compatibility wrapper for callers that need only the final scalar."""
+    return compose_quality_details(metrics, config=config).quality
+
+
+def compose_quality_details(metrics: MetricVector, *, config: RewardConfig) -> QualityComposition:
+    """Compose nullable blocks and expose availability for calibration audits."""
     config.validate()
     # Raw embedding cosine is intentionally excluded.  Only an answer-type
     # calibrated value can contribute to quality, and it is overridden to zero
@@ -22,7 +37,7 @@ def compose_quality(metrics: MetricVector, *, config: RewardConfig) -> float | N
         metrics.critic_correctness,
     )
     faithfulness = _mean_available(metrics.claim_faithfulness, metrics.critic_groundedness)
-    evidence = _mean_available(metrics.supporting_evidence_recall, metrics.context_precision, metrics.evidence_mrr)
+    evidence = _mean_available(metrics.supporting_evidence_recall, metrics.context_precision, metrics.evidence_ndcg_at_k, metrics.evidence_mrr)
     completeness = _mean_available(
         metrics.answer_completeness,
         metrics.critic_evidence_completeness,
@@ -35,9 +50,10 @@ def compose_quality(metrics: MetricVector, *, config: RewardConfig) -> float | N
         (evidence, config.evidence_weight),
         (completeness, config.completeness_weight),
     )
+    availability = {"answer": answer is not None, "faithfulness": faithfulness is not None, "evidence": evidence is not None, "completeness": completeness is not None}
     active_weight = sum(weight for value, weight in weighted if value is not None)
     if active_weight == 0:
-        return None
+        return QualityComposition(quality=None, base_quality=None, penalty=0.0, availability_mask=availability)
     base = sum(float(value) * weight for value, weight in weighted if value is not None) / active_weight
     penalty = config.contradiction_penalty * float(metrics.contradiction_probability or 0.0)
     if metrics.claim_faithfulness is not None:
@@ -48,8 +64,8 @@ def compose_quality(metrics: MetricVector, *, config: RewardConfig) -> float | N
     if metrics.correct_refusal == 0.0:
         penalty += config.incorrect_refusal_penalty
     if metrics.numeric_conflict or metrics.polarity_conflict:
-        return -1.0
-    return max(-1.0, min(1.0, base - penalty))
+        return QualityComposition(quality=-1.0, base_quality=base, penalty=penalty, availability_mask=availability)
+    return QualityComposition(quality=max(-1.0, min(1.0, base - penalty)), base_quality=base, penalty=penalty, availability_mask=availability)
 
 
 def compute_units(outcome: CandidateOutcome) -> float:

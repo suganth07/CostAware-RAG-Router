@@ -1,0 +1,18 @@
+# Model-neutral critic configuration. No model choice is hardcoded in code.
+primary:
+  enabled: false
+  adapter: null
+  model_id: null
+  revision: null
+  options: {}
+secondary:
+  enabled: false
+  adapter: null
+  model_id: null
+  revision: null
+  options: {}
+secondary_mode: uncertain_or_audit
+uncertainty_threshold: 0.40
+disagreement:
+  score_tolerance: 0.25
+  confidence_tolerance: 0.30

@@ -1,0 +1,7 @@
+# Model-neutral semantic-equivalence configuration. Fill adapter/model_id only
+# after selecting and validating a model against human-reviewed answer pairs.
+enabled: false
+adapter: null
+model_id: null
+revision: null
+options: {}

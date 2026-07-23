@@ -82,6 +82,12 @@ prompt version, and judge stage in
 critic artifact therefore reuses prior local-LLM responses; changing the model
 or prompt version produces fresh judgments.
 
+Semantic and critic model choices are intentionally disabled by default. Set
+an adapter and `model_id` in `configs/router/semantic.yaml` or
+`configs/router/critics.yaml` only after validation. The configuration loader
+rejects enabled model slots without both values, so no model is silently
+hardcoded into the pipeline.
+
 Audit a completed critic artifact and create a 20-record blind human-review
 queue. The report compares action coverage, score distributions, the explicit
 schema-repair rate, exact-match agreement, and accepted-answer coverage. These

@@ -41,29 +41,36 @@ than only feedback from the action that happened to be selected.
 - **Not done**: complete repeated latency-calibration subset and the
   1,000–2,000-question pilot collection.
 
-### M2 — Metric and reward engine: Partial
+### M2 — Metric and reward engine: Partial (foundation implemented)
 
 - **Done**: deterministic lexical metrics, answer-type and hard-conflict
   guards, retrieval/evidence signals available from the existing evaluator,
   nullable metric composition, compute units, budget-aware oracle, raw answer
   embedding similarity support.
-- **In progress**: semantic-equivalence scorer contract and reproducible
-  embedding-calibration fitter.
-- **Not done**: selected/validated semantic cross-encoder or answer-similarity
-  model; learned per-answer-type embedding thresholds; contradiction model;
-  evidence nDCG and claim-level faithfulness/completeness implementations;
-  provisional human-calibrated final reward weights.
+- **Done**: semantic-equivalence adapter/configuration contract; raw and
+  calibrated embedding pipeline plus threshold fitter; deterministic
+  contradiction guard plus configurable contradiction interface; evidence nDCG;
+  accepted-answer completeness; claim extractor/verifier interfaces;
+  availability-mask quality composition; score artifacts now preserve quality
+  base, penalty, and metric-block availability.
+- **Blocked**: selected/validated semantic and contradiction models; enabled
+  claim verifier; learned per-answer-type embedding thresholds; and final
+  human-calibrated reward weights. These remain disabled/null rather than
+  fabricated until the required labels and model decisions exist.
 
-### M3 — Critic pipeline: Partial
+### M3 — Critic pipeline: Partial (infrastructure implemented)
 
 - **Done**: candidate-blind strict JSON critic; prompt/model versioning;
   structured records; v1/v2 rejection history; v3 two-pass correctness versus
   grounding separation; completed 100-record V3 smoke critic artifact and
   audit; SQLite prompt-response cache keyed by the complete prompt, system
-  prompt, stage, model fingerprint, and prompt version.
-- **Not done**: second independent critic; disagreement detection/adjudication; uncertainty weight;
-  plan-required 300–500 manually reviewed balanced calibration outcomes and
-  agreement/calibration metrics.
+  prompt, stage, model fingerprint, and prompt version; configurable
+  primary/secondary critic slots; ensemble interface; disagreement detection;
+  model-neutral adjudication interface; uncertainty weights; human-calibration
+  summary contract.
+- **Blocked**: actual secondary critic/adjudicator selection and the
+  plan-required 300–500 manually reviewed balanced calibration outcomes. No
+  critic configuration is enabled or given a model ID by default.
 
 ### M4 — Pilot outcome dataset: Not started
 
@@ -114,6 +121,34 @@ than only feedback from the action that happened to be selected.
 3. Run the 1,000–2,000-question pilot with repeated latency measurements.
 4. Calibrate provisional reward components and freeze grouped splits.
 5. Collect the full training matrix before attempting M6/M7 training.
+
+## Model-neutral M2/M3 configuration
+
+The implementation deliberately contains no fixed semantic model, primary
+critic, secondary critic, or adjudicator. Configure those later through:
+
+- `configs/router/semantic.yaml`
+- `configs/router/critics.yaml`
+
+Both files begin disabled with `adapter: null` and `model_id: null`. The
+configuration loader validates that an enabled slot has both fields. Registered
+adapters are supplied by the deployment/experiment code, so swapping models
+does not require editing metric, reward, critic, or training code.
+
+## Current implementation verification
+
+Contract tests for the newly added M2/M3 components are in
+`tests/test_router_m2_m3.py`. They cover evidence nDCG, multi-answer
+completeness, embedding-calibration separability, nullable reward availability
+masks, and critic-disagreement uncertainty. Run them in the project's
+`tf_gpu` environment before enabling any configured model adapter:
+
+```text
+python -m pytest tests/test_router_foundation.py tests/test_router_m2_m3.py -q
+```
+
+No model adapter, calibration data, reward-weight calibration, outcome model,
+or contextual-bandit policy is invoked by these tests.
 
 The smoke artifacts are deliberately not used to claim a trained RL router:
 their purpose is to validate contracts and expose collection/metric failures

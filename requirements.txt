@@ -10,3 +10,4 @@ torch>=2.2.0
 notebook>=7.0.0
 tqdm>=4.66.0
 pytest>=8.2.0
+PyYAML>=6.0.1

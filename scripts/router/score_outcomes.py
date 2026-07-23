@@ -14,7 +14,7 @@ from src.adapters.datasets.base import EvaluationSample
 from src.router.config import RewardConfig
 from src.router.data.serialization import read_jsonl, write_jsonl_atomic
 from src.router.metrics import score_outcome
-from src.router.reward import compose_quality, compute_units
+from src.router.reward import compose_quality_details, compute_units
 from src.router.types import CandidateOutcome, QuestionRecord
 
 
@@ -26,8 +26,19 @@ def main() -> None:
         outcome = CandidateOutcome.from_dict(raw)
         question = questions[outcome.question_id]
         sample = EvaluationSample(id=question.question_id, question=question.question, answers=question.accepted_answers, metadata=question.dataset_metadata)
-        metrics = score_outcome(sample, outcome)
-        rows.append({"outcome": outcome.to_dict(), "metrics": metrics.to_dict(), "quality": compose_quality(metrics, config=RewardConfig()), "compute_units": compute_units(outcome)})
+        metrics = score_outcome(sample, outcome, gold_evidence=question.gold_evidence)
+        composition = compose_quality_details(metrics, config=RewardConfig())
+        rows.append({
+            "outcome": outcome.to_dict(),
+            "metrics": metrics.to_dict(),
+            "quality": composition.quality,
+            "quality_composition": {
+                "base_quality": composition.base_quality,
+                "penalty": composition.penalty,
+                "availability_mask": composition.availability_mask,
+            },
+            "compute_units": compute_units(outcome),
+        })
     write_jsonl_atomic(args.output, rows)
     print(json.dumps({"scored_outcomes": str(args.output), "records": len(rows)}, indent=2))
 
