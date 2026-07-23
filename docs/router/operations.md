@@ -76,6 +76,12 @@ Inspect the JSONL and its optional `*.failures.jsonl` companion. Do not merge
 critic scores into a reportable reward until a human audit has checked the
 sample; see [semantic-metrics-and-critic.md](semantic-metrics-and-critic.md).
 
+Critic responses are cached by full prompt, system prompt, model identifier,
+prompt version, and judge stage in
+`artifacts/router/cache/critic_responses.sqlite3`. Re-running the identical
+critic artifact therefore reuses prior local-LLM responses; changing the model
+or prompt version produces fresh judgments.
+
 Audit a completed critic artifact and create a 20-record blind human-review
 queue. The report compares action coverage, score distributions, the explicit
 schema-repair rate, exact-match agreement, and accepted-answer coverage. These

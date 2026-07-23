@@ -5,28 +5,23 @@ from __future__ import annotations
 import hashlib
 from uuid import uuid4
 
-from src.adapters.llm.adapter import LLM
+from src.adapters.llm.adapter import LLM, LLMResponse
+from src.router.critics.cache import CachedJudgeResponse, CriticResponseCache
 from src.router.critics.prompts import ANSWER_SYSTEM_PROMPT, CRITIC_PROMPT_VERSION, SYSTEM_PROMPT, build_answer_correctness_prompt, build_critic_prompt
 from src.router.critics.schemas import parse_answer_critique, parse_critique
 from src.router.types import CandidateOutcome, CritiqueRecord, QuestionRecord
 
 
 class StructuredCritic:
-    def __init__(self, llm: LLM, *, judge_run_id: str | None = None) -> None:
+    def __init__(self, llm: LLM, *, judge_model_fingerprint: str, cache: CriticResponseCache | None = None, judge_run_id: str | None = None) -> None:
         self.llm = llm
+        self.judge_model_fingerprint = judge_model_fingerprint
+        self.cache = cache
         self.judge_run_id = judge_run_id or f"critic-{uuid4().hex[:12]}"
 
     def judge(self, question: QuestionRecord, outcome: CandidateOutcome) -> CritiqueRecord:
-        answer_response = self.llm.generate(
-            build_answer_correctness_prompt(question, outcome),
-            system_prompt=ANSWER_SYSTEM_PROMPT,
-            options={"temperature": 0},
-        )
-        evidence_response = self.llm.generate(
-            build_critic_prompt(question, outcome),
-            system_prompt=SYSTEM_PROMPT,
-            options={"temperature": 0},
-        )
+        answer_response = self._generate("answer_correctness", build_answer_correctness_prompt(question, outcome), ANSWER_SYSTEM_PROMPT)
+        evidence_response = self._generate("evidence_grounding", build_critic_prompt(question, outcome), SYSTEM_PROMPT)
         answer = parse_answer_critique(answer_response.text)
         evidence = parse_critique(evidence_response.text)
         return CritiqueRecord(
@@ -53,3 +48,25 @@ class StructuredCritic:
             critique=f"Answer correctness: {answer['critique']}\n\nEvidence grounding: {evidence['critique']}",
             raw_response_hash=hashlib.sha256((answer_response.text + "\n" + evidence_response.text).encode("utf-8")).hexdigest(),
         )
+
+    def _generate(self, stage: str, prompt: str, system_prompt: str) -> LLMResponse:
+        cached = self.cache.get(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            model_fingerprint=self.judge_model_fingerprint,
+            prompt_version=CRITIC_PROMPT_VERSION,
+            stage=stage,
+        ) if self.cache else None
+        if cached is not None:
+            return LLMResponse(text=cached.text, model=cached.model)
+        response = self.llm.generate(prompt, system_prompt=system_prompt, options={"temperature": 0})
+        if self.cache:
+            self.cache.put(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                model_fingerprint=self.judge_model_fingerprint,
+                prompt_version=CRITIC_PROMPT_VERSION,
+                stage=stage,
+                response=CachedJudgeResponse(text=response.text, model=response.model),
+            )
+        return response

@@ -1,0 +1,129 @@
+{
+  "overall": {
+    "raw_outcomes": 240,
+    "question_repeat_groups": 80,
+    "questions": 40,
+    "repeats": 2,
+    "actions": [
+      "hybrid_rag",
+      "graph_rag",
+      "optimized_graph_rag"
+    ],
+    "budget": {
+      "mean_latency_ms": null,
+      "tail_latency_ms": null,
+      "compute_units": null,
+      "max_request_latency_ms": null
+    }
+  },
+  "per_action": {
+    "hybrid_rag": {
+      "outcomes": 80,
+      "errors": 0,
+      "quality": {
+        "count": 80,
+        "mean": -0.24371298216314283,
+        "p50": -0.39295774647887327,
+        "p95": 0.2777777777777778,
+        "minimum": -0.4,
+        "maximum": 0.4466666666666667
+      },
+      "compute_units": {
+        "count": 80,
+        "mean": 0.011658499999999999,
+        "p50": 0.011600000000000001,
+        "p95": 0.012240000000000001,
+        "minimum": 0.01105,
+        "maximum": 0.012480000000000002
+      },
+      "latency_ms": {
+        "count": 80,
+        "mean": 3677.175562499997,
+        "p50": 3589.180100000249,
+        "p95": 4209.905599999729,
+        "minimum": 3072.4513000000115,
+        "maximum": 5632.796799999596
+      },
+      "latency_reference": {
+        "mean": 3677.1755624999983,
+        "p95": 4209.905599999729
+      }
+    },
+    "graph_rag": {
+      "outcomes": 80,
+      "errors": 0,
+      "quality": {
+        "count": 80,
+        "mean": -0.08002229129835829,
+        "p50": 0.1133333333333334,
+        "p95": 0.45555555555555566,
+        "minimum": -1.0,
+        "maximum": 0.4603174603174604
+      },
+      "compute_units": {
+        "count": 80,
+        "mean": 0.25981875,
+        "p50": 0.26599,
+        "p95": 0.27521,
+        "minimum": 0.22225,
+        "maximum": 0.27591
+      },
+      "latency_ms": {
+        "count": 80,
+        "mean": 4962.377841249997,
+        "p50": 4917.200699999739,
+        "p95": 7287.030699999377,
+        "minimum": 3032.7422000000297,
+        "maximum": 7796.257699999842
+      },
+      "latency_reference": {
+        "mean": 4962.377841249998,
+        "p95": 7287.030699999377
+      }
+    },
+    "optimized_graph_rag": {
+      "outcomes": 80,
+      "errors": 0,
+      "quality": {
+        "count": 80,
+        "mean": 0.10286383332677847,
+        "p50": 0.1714975845410629,
+        "p95": 0.5625000000000001,
+        "minimum": -1.0,
+        "maximum": 0.6136363636363638
+      },
+      "compute_units": {
+        "count": 80,
+        "mean": 0.18117974999999995,
+        "p50": 0.16419,
+        "p95": 0.33531,
+        "minimum": 0.10266,
+        "maximum": 0.40083
+      },
+      "latency_ms": {
+        "count": 80,
+        "mean": 4225.008742500078,
+        "p50": 4163.538599999811,
+        "p95": 5637.220900000102,
+        "minimum": 2751.0254000003442,
+        "maximum": 8601.151100000152
+      },
+      "latency_reference": {
+        "mean": 4225.00874250008,
+        "p95": 5637.220900000102
+      }
+    }
+  },
+  "oracle_action_distribution": {
+    "optimized_graph_rag": 50,
+    "graph_rag": 20,
+    "hybrid_rag": 10
+  },
+  "feasible_action_counts": {
+    "optimized_graph_rag": 80,
+    "hybrid_rag": 80,
+    "graph_rag": 80
+  },
+  "least_violation_groups": 0,
+  "warnings": []
+}

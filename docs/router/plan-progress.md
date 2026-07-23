@@ -35,9 +35,11 @@ than only feedback from the action that happened to be selected.
 - **Done**: adapters for Hybrid RAG, GraphRAG, and Optimized GraphRAG;
   resumable full-information collector; normalized outcome/timing records;
   complete action-matrix validation; smoke collection of 100 questions × two
-  repeats × three actions.
-- **Not done**: randomized candidate execution order, complete repeated
-  latency-calibration subset, and 1,000–2,000-question pilot collection.
+  repeats × three actions; randomized action order for each question/repeat,
+  with the collection seed recorded in the run manifest; a second 40-question
+  engineering test with 240 complete outcomes and no collection errors.
+- **Not done**: complete repeated latency-calibration subset and the
+  1,000–2,000-question pilot collection.
 
 ### M2 — Metric and reward engine: Partial
 
@@ -57,9 +59,9 @@ than only feedback from the action that happened to be selected.
 - **Done**: candidate-blind strict JSON critic; prompt/model versioning;
   structured records; v1/v2 rejection history; v3 two-pass correctness versus
   grounding separation; completed 100-record V3 smoke critic artifact and
-  audit.
-- **Not done**: prompt-result cache keyed by prompt/model fingerprint; second
-  independent critic; disagreement detection/adjudication; uncertainty weight;
+  audit; SQLite prompt-response cache keyed by the complete prompt, system
+  prompt, stage, model fingerprint, and prompt version.
+- **Not done**: second independent critic; disagreement detection/adjudication; uncertainty weight;
   plan-required 300–500 manually reviewed balanced calibration outcomes and
   agreement/calibration metrics.
 
@@ -116,3 +118,53 @@ than only feedback from the action that happened to be selected.
 The smoke artifacts are deliberately not used to claim a trained RL router:
 their purpose is to validate contracts and expose collection/metric failures
 cheaply before the plan's larger collections are run.
+
+## Current 40-question engineering test
+
+This was a small, repeatable verification run before the plan's 1,000–2,000
+question pilot. It must use a new output path and must not be mixed with the
+earlier 100-question smoke artifact.
+
+Expected matrix size:
+
+```text
+40 questions × 2 repeats × 3 actions = 240 raw outcomes
+40 questions × 2 repeats = 80 full-information training examples
+```
+
+Pass criteria before continuing implementation:
+
+1. Collection writes exactly 240 outcomes with no unhandled errors.
+2. Manifest records the same three action IDs, seed, corpus/model fingerprints,
+   and `FeatureStructuralEncoder` for Optimized GraphRAG.
+3. Scoring writes 240 rows with nullable metrics rather than fabricated zeros.
+4. `analyze_pilot.py` reports no incomplete question/repeat/action matrix.
+5. The budget-free oracle selects at least two actions somewhere in the test
+   set. A single-action oracle is a warning to inspect reward signals, not a
+   reason to train RL.
+6. No critic score is promoted into reward until the plan's human-calibration
+   gate is complete.
+
+After this test passes, continue code work on M2/M3 in parallel with the plan
+pilot preparation. Do not call the 40-question artifact a pilot, final model,
+or RL result.
+
+### Verified result — 23 July 2026
+
+The test passed every structural criterion:
+
+- `240` raw outcomes: 40 questions × 2 repeats × 3 actions.
+- `80` complete full-information training examples.
+- Zero candidate errors and no matrix-completeness warnings.
+- The manifest records the expected action registry, seed `7`, corpus/model
+  fingerprints, and `FeatureStructuralEncoder`; learned R-GCN/projector
+  components remain disabled.
+- The budget-free oracle did not collapse: Optimized GraphRAG was selected for
+  50 groups, GraphRAG for 20, and Hybrid RAG for 10.
+- Measured mean/p95 end-to-end latency in this engineering environment:
+  Hybrid RAG `3677/4210 ms`, Optimized GraphRAG `4225/5637 ms`, and GraphRAG
+  `4962/7287 ms`.
+
+These values are engineering diagnostics only because text retrieval was
+limited to 1,000 documents for this test. They are not deployment budgets or
+reportable final benchmark numbers.

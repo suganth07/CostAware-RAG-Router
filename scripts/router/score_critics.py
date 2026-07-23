@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from src.adapters.llm.ollama import OllamaLLM, OllamaLLMConfig
-from src.router.critics import StructuredCritic
+from src.router.critics import CriticResponseCache, StructuredCritic
 from src.router.critics.prompts import CRITIC_PROMPT_VERSION
 from src.router.data.serialization import read_jsonl, write_jsonl_atomic
 from src.router.types import CandidateOutcome, QuestionRecord
@@ -43,23 +43,24 @@ def main() -> None:
         timeout_seconds=args.timeout_seconds,
         num_predict=args.max_tokens,
     ))
-    critic = StructuredCritic(llm, judge_run_id=args.judge_run_id)
     results = list(existing)
     failures: list[dict[str, str]] = []
-    for outcome in selected:
-        key = (outcome.question_id, outcome.candidate_id, outcome.repeat_id, outcome.run_id, args.judge_model, CRITIC_PROMPT_VERSION)
-        if key in existing_keys:
-            continue
-        try:
-            record = critic.judge(questions[outcome.question_id], outcome)
-            results.append(record.to_dict())
-            existing_keys.add(record.key)
-            write_jsonl_atomic(args.output, results)
-        except Exception as exc:
-            failure = {"question_id": outcome.question_id, "candidate_id": outcome.candidate_id, "repeat_id": str(outcome.repeat_id), "error": f"{type(exc).__name__}: {exc}"}
-            failures.append(failure)
-            if args.fail_fast:
-                raise RuntimeError(json.dumps(failure)) from exc
+    with CriticResponseCache(args.critic_cache) as cache:
+        critic = StructuredCritic(llm, judge_model_fingerprint=args.judge_model, cache=cache, judge_run_id=args.judge_run_id)
+        for outcome in selected:
+            key = (outcome.question_id, outcome.candidate_id, outcome.repeat_id, outcome.run_id, args.judge_model, CRITIC_PROMPT_VERSION)
+            if key in existing_keys:
+                continue
+            try:
+                record = critic.judge(questions[outcome.question_id], outcome)
+                results.append(record.to_dict())
+                existing_keys.add(record.key)
+                write_jsonl_atomic(args.output, results)
+            except Exception as exc:
+                failure = {"question_id": outcome.question_id, "candidate_id": outcome.candidate_id, "repeat_id": str(outcome.repeat_id), "error": f"{type(exc).__name__}: {exc}"}
+                failures.append(failure)
+                if args.fail_fast:
+                    raise RuntimeError(json.dumps(failure)) from exc
     # Always refresh this companion artifact so it cannot retain failures from
     # a previous run after a successful resumed run.
     write_jsonl_atomic(args.output.with_suffix(".failures.jsonl"), failures)
@@ -97,6 +98,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--questions", required=True)
     parser.add_argument("--output", default="artifacts/router/critiques/pilot_critic.jsonl", type=Path)
     parser.add_argument("--judge-model", default="qwen3:4b-instruct")
+    parser.add_argument("--critic-cache", default="artifacts/router/cache/critic_responses.sqlite3")
     parser.add_argument("--ollama-base-url", default="http://localhost:11434")
     parser.add_argument("--judge-run-id", default=None)
     parser.add_argument("--max-records", type=int, default=100)
