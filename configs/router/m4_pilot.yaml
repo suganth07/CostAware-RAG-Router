@@ -1,0 +1,15 @@
+# M4 collection specification. This is a plan pilot, not training configuration.
+dataset: metaqa_2hop
+split: train
+full_corpus: true
+main_questions: 1000
+main_repeats: 1
+latency_subset_questions: 100
+latency_subset_repeats: 3
+stratified: true
+seed: 7
+latency_subset_seed: 17
+generation: true
+normal_index_batch_size: 512
+critic_collection: conditional_on_enabled_primary_critic
+semantic_scoring: conditional_on_enabled_semantic_adapter

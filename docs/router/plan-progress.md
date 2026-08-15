@@ -1,205 +1,168 @@
-# `plan.md` Implementation Progress
+# `plan.md` implementation progress
 
-## Why this project exists
+## Project purpose
 
-The project is not simply training RL on RAG outputs. It builds a safe offline
-contextual-bandit router that chooses one action per question:
-`hybrid_rag`, `graph_rag`, or `optimized_graph_rag`. The router should choose
-the action with the best expected answer/evidence quality while respecting
-measured latency and compute budgets. Full-information collection runs all
-three actions offline, so later learning has counterfactual outcomes rather
-than only feedback from the action that happened to be selected.
+This project is an offline, quality-constrained contextual-bandit router. For
+each question it must select one of `hybrid_rag`, `graph_rag`, or
+`optimized_graph_rag`. Offline collection runs all three candidates, producing
+the counterfactual quality and cost matrix required for later supervised and
+RL-style policy learning. It is not yet an RL training result.
 
 ## Status key
 
-- **Done**: implemented and exercised on the 100-question smoke run.
-- **Partial**: foundation exists, but plan exit criteria are not met.
-- **Not started**: no plan-aligned implementation yet.
-- **Blocked**: requires a model choice, human labels, target-hardware data, or
-  a larger collection that cannot be fabricated in code.
+- **Done**: implemented and verified.
+- **Prepared**: code, configuration, and run procedure are ready; the planned
+  artifact has not been collected yet.
+- **Partial**: foundation exists, but the plan exit criteria are incomplete.
+- **Blocked**: requires a model decision, human labels, target-hardware data,
+  or a larger collection. It must not be fabricated in code.
 
 ## Milestone checklist
 
 ### M0 — Lock contracts and configuration: Partial
 
-- **Done**: immutable three-action registry; `QuestionRecord`,
-  `CandidateOutcome`, `MetricVector`, and `CritiqueRecord`; JSONL artifacts;
-  manifests/fingerprints; explicit budget/reward configuration.
-- **Partial**: experiment config is present, but train/validation/test manifests
-  and the locked evaluation manifest have not been frozen.
-- **Blocked**: final semantic model, primary/secondary critics, production
-  fallback, and target-hardware budgets are explicitly unresolved in plan.md.
+- **Done**: immutable three-action registry; typed question/outcome/metric/
+  critic contracts; JSONL artifacts; manifests and fingerprints; explicit
+  budget and reward configuration.
+- **Partial**: grouped train/validation/test manifests and the locked
+  evaluation manifest have not been frozen.
+- **Blocked**: deployment budgets, fallback, semantic model, and critic-model
+  choices remain deliberately unresolved.
 
 ### M1 — Candidate adapters and shared collector: Partial
 
 - **Done**: adapters for Hybrid RAG, GraphRAG, and Optimized GraphRAG;
-  resumable full-information collector; normalized outcome/timing records;
-  complete action-matrix validation; smoke collection of 100 questions × two
-  repeats × three actions; randomized action order for each question/repeat,
-  with the collection seed recorded in the run manifest; a second 40-question
-  engineering test with 240 complete outcomes and no collection errors.
-- **Not done**: complete repeated latency-calibration subset and the
-  1,000–2,000-question pilot collection.
+  resumable full-information collection; normalized timings; complete action
+  matrix validation; random action order with recorded seed; 100-question
+  smoke collection and 40-question engineering verification.
+- **Prepared**: frozen latency-subset selection from a main pilot question
+  manifest and exact-subset replay through `--questions-file`.
+- **Pending**: plan-scale 1,000–2,000-question collection and the repeated
+  latency calibration subset.
 
-### M2 — Metric and reward engine: Partial (foundation implemented)
+### M2 — Metric and reward engine: Complete foundation
 
-- **Done**: deterministic lexical metrics, answer-type and hard-conflict
-  guards, retrieval/evidence signals available from the existing evaluator,
-  nullable metric composition, compute units, budget-aware oracle, raw answer
-  embedding similarity support.
-- **Done**: semantic-equivalence adapter/configuration contract; raw and
-  calibrated embedding pipeline plus threshold fitter; deterministic
-  contradiction guard plus configurable contradiction interface; evidence nDCG;
-  accepted-answer completeness; claim extractor/verifier interfaces;
-  availability-mask quality composition; score artifacts now preserve quality
-  base, penalty, and metric-block availability.
-- **Blocked**: selected/validated semantic and contradiction models; enabled
-  claim verifier; learned per-answer-type embedding thresholds; and final
-  human-calibrated reward weights. These remain disabled/null rather than
-  fabricated until the required labels and model decisions exist.
+- **Done**: deterministic lexical/answer-type metrics, evidence metrics,
+  compute units, budget-aware oracle, raw embedding support, semantic-
+  equivalence contract, embedding-calibration fitter, contradiction contract,
+  claim-faithfulness interfaces, answer completeness, evidence nDCG, and a
+  nullable availability-mask reward composer.
+- **Blocked**: a selected and validated semantic/contradiction model, an
+  enabled claim verifier, learned answer-type thresholds, and final
+  human-calibrated reward weights. These remain null/disabled until labels and
+  model decisions exist.
 
-### M3 — Critic pipeline: Partial (infrastructure implemented)
+### M3 — Critic pipeline: Complete foundation
 
-- **Done**: candidate-blind strict JSON critic; prompt/model versioning;
-  structured records; v1/v2 rejection history; v3 two-pass correctness versus
-  grounding separation; completed 100-record V3 smoke critic artifact and
-  audit; SQLite prompt-response cache keyed by the complete prompt, system
-  prompt, stage, model fingerprint, and prompt version; configurable
-  primary/secondary critic slots; ensemble interface; disagreement detection;
-  model-neutral adjudication interface; uncertainty weights; human-calibration
-  summary contract.
-- **Blocked**: actual secondary critic/adjudicator selection and the
-  plan-required 300–500 manually reviewed balanced calibration outcomes. No
-  critic configuration is enabled or given a model ID by default.
+- **Done**: candidate-blind structured critic, prompt/model/run versioning,
+  two-pass correctness versus grounding separation, response cache,
+  configurable primary/secondary slots, disagreement and uncertainty logic,
+  model-neutral adjudication interface, and human-calibration contract.
+- **Done**: the 100-record V3 critic artifact/audit was collected without
+  failures. It is diagnostic only.
+- **Blocked**: selecting a secondary critic/adjudicator and the 300–500
+  balanced human-reviewed calibration set. No default critic model is encoded
+  in M3 configuration.
 
-### M4 — Pilot outcome dataset: Not started
+### M4 — Pilot outcome dataset: In progress
 
-- **Done prerequisite**: 100-question smoke matrix and smoke critic run.
-- **Not done**: 1,000–2,000 stratified questions, 3–5 latency repeats on a
-  calibration subset, critic coverage for at least 500 questions, action-win
-  analysis, and provisional reward calibration.
+- **Done prerequisite**: 100-question smoke matrix, 40-question engineering
+  verification, and M2/M3 foundations.
+- **Prepared**: `configs/router/m4_pilot.yaml`; resumable full-corpus main
+  collection; deterministic scoring and audits; a frozen stratified
+  latency-subset selector; complete-question critic sampling; and a read-only
+  full-corpus embedding-cache inspection command.
+- **Verified diagnostic (24 July 2026)**: the `nomic-embed-text` cache has
+  14,817 namespace entries, but only 1,000 unique full MetaQA NormalRAG chunks
+  match. The next registry build would need 132,582 new unique vectors
+  (roughly 16,573 local embedding requests at a service batch size of eight).
+  HybridRAG's NormalRAG indexing is therefore the expected initial bottleneck.
+  NormalRAG now checkpoints embeddings every 512 chunks so interruption does
+  not discard completed cache work.
+- **Done (15 August 2026)**: main full-corpus MetaQA 2-hop matrix collected,
+  deterministically scored, converted to 1,000 full-information rows, and
+  audited with no warnings: 1,000 questions × 1 repeat × 3 actions = 3,000
+  outcomes.
+- **Pending execution**: select the frozen 100-question latency subset; reuse
+  its 300 compatible main-pilot rows as logical repeat 0; collect only two
+  additional repeats (600 new outcomes); score them; and create the derived
+  three-repeat latency-variation report. Raw runs remain separate and their
+  fingerprints are checked before analysis.
+- **Conditional**: after a primary critic is explicitly enabled and validated,
+  collect all three critic judgements for at least 500 complete question
+  matrices. Semantic metrics are similarly conditional on a configured,
+  validated semantic adapter.
+- **Blocked**: provisional reward calibration and promotion of critic/semantic
+  signals until the plan-required human review exists. No reward weights or
+  human labels will be invented.
 
 ### M5 — Full training dataset: Not started
 
-- **Not done**: 15,000–30,000 stratified questions; semantic and selective
-  critic scores; grouped train/validation/cross-domain/locked-test manifests;
-  data card.
+- **Pending**: 15,000–30,000 stratified questions; grouped split manifests;
+  selective semantic/critic labels; and the data card.
 
 ### M6 — Outcome model and oracle imitation: Not started
 
-- **Not done**: compact multi-task predictor for per-action quality, latency
-  quantiles, compute, and failure; pairwise ranking loss; oracle labels;
-  imitation warm start; residual/calibration reports.
+- **Pending**: multi-task per-action quality/latency/compute/failure model,
+  ranking loss, oracle imitation, residual reports, and calibration.
 
 ### M7 — Constrained contextual-bandit policy: Not started
 
-- **Not done**: full-information constrained objective; Lagrangian updates;
-  constraint curriculum; probability/uncertainty calibration; policy checkpoint.
+- **Pending**: full-information constrained objective, Lagrangian updates,
+  constraint curriculum, calibration, and policy checkpoint.
 
 ### M8 — Evaluation and ablation: Not started
 
-- **Not done**: static/heuristic/oracle baselines; paired bootstrap tests;
-  regret and constraint metrics; feature/reward/critic/embedding ablations;
-  cross-domain and robustness evaluations.
+- **Pending**: baseline/ablation evaluation, paired tests, regret and
+  constraint reports, cross-domain checks, and robustness evaluation.
 
-### M9 — Runtime artifact and shadow deployment: Not started
+### M9 — Runtime artifact and terminal routing: Not started
 
-- **Not done**: runtime selection policy, conservative uncertainty fallback,
-  compatibility validation, telemetry, drift checks, exported artifact, shadow
-  run.
+- **Final user-facing acceptance criterion**: after M6–M9 are completed, a
+  user enters a question in the terminal and receives the selected RAG action,
+  budget/uncertainty/fallback decision logs, the generated answer, and request
+  telemetry. The terminal CLI must load only a compatibility-validated exported
+  router artifact and must never use gold labels or benchmark-only fields.
+- **Pending**: runtime feature extraction, policy/artifact loader, budget and
+  uncertainty guards, candidate execution, structured terminal output,
+  compatibility validation, and telemetry.
 
 ### M10 — Controlled rollout: Not started
 
-- **Not done**: promotion gates, canary rollout, rollback triggers, and
+- **Pending**: promotion gates, canary rollout, rollback triggers, and
   production monitoring.
 
-## Current next order from `plan.md`
+## Verified engineering check
 
-1. Finish M2 metric foundations and select/validate the semantic model.
-2. Manually review the first 100 V3 critic judgments; then create the
-   plan-required 300–500 balanced critic calibration set.
-3. Run the 1,000–2,000-question pilot with repeated latency measurements.
-4. Calibrate provisional reward components and freeze grouped splits.
-5. Collect the full training matrix before attempting M6/M7 training.
+The 23 July 2026 verification produced 240 outcomes from 40 questions × 2
+repeats × 3 actions, 80 complete matrices, zero candidate errors, and no
+completeness warnings. Its budget-free oracle chose Optimized GraphRAG for 50
+groups, GraphRAG for 20, and Hybrid RAG for 10. These are engineering
+diagnostics only: the test used 1,000 text documents and is not a final
+benchmark or deployment latency measurement.
 
-## Model-neutral M2/M3 configuration
+## What happens next
 
-The implementation deliberately contains no fixed semantic model, primary
-critic, secondary critic, or adjudicator. Configure those later through:
+1. Run the remaining M4 latency subset workflow in
+   [the M4 pilot runbook](m4-pilot.md), reusing the compatible main-pilot
+   repeat and collecting only 600 new rows.
+2. Verify the derived three-repeat latency report, action imbalance, and
+   candidate failures before collecting more data.
+3. If a validated primary critic is configured, collect complete three-action
+   critic matrices for at least 500 questions.
+4. Obtain 300–500 balanced human reviews before selecting semantic/critic
+   reward signals or provisional reward weights.
+5. Only then freeze M5 splits and collect the larger training matrix. Do not
+   start M6 or M7 before the M4 reward-calibration gate is complete.
+
+## Model-neutral configuration
+
+Model choices remain outside code:
 
 - `configs/router/semantic.yaml`
 - `configs/router/critics.yaml`
+- `configs/router/m4_pilot.yaml`
 
-Both files begin disabled with `adapter: null` and `model_id: null`. The
-configuration loader validates that an enabled slot has both fields. Registered
-adapters are supplied by the deployment/experiment code, so swapping models
-does not require editing metric, reward, critic, or training code.
-
-## Current implementation verification
-
-Contract tests for the newly added M2/M3 components are in
-`tests/test_router_m2_m3.py`. They cover evidence nDCG, multi-answer
-completeness, embedding-calibration separability, nullable reward availability
-masks, and critic-disagreement uncertainty. Run them in the project's
-`tf_gpu` environment before enabling any configured model adapter:
-
-```text
-python -m pytest tests/test_router_foundation.py tests/test_router_m2_m3.py -q
-```
-
-No model adapter, calibration data, reward-weight calibration, outcome model,
-or contextual-bandit policy is invoked by these tests.
-
-The smoke artifacts are deliberately not used to claim a trained RL router:
-their purpose is to validate contracts and expose collection/metric failures
-cheaply before the plan's larger collections are run.
-
-## Current 40-question engineering test
-
-This was a small, repeatable verification run before the plan's 1,000–2,000
-question pilot. It must use a new output path and must not be mixed with the
-earlier 100-question smoke artifact.
-
-Expected matrix size:
-
-```text
-40 questions × 2 repeats × 3 actions = 240 raw outcomes
-40 questions × 2 repeats = 80 full-information training examples
-```
-
-Pass criteria before continuing implementation:
-
-1. Collection writes exactly 240 outcomes with no unhandled errors.
-2. Manifest records the same three action IDs, seed, corpus/model fingerprints,
-   and `FeatureStructuralEncoder` for Optimized GraphRAG.
-3. Scoring writes 240 rows with nullable metrics rather than fabricated zeros.
-4. `analyze_pilot.py` reports no incomplete question/repeat/action matrix.
-5. The budget-free oracle selects at least two actions somewhere in the test
-   set. A single-action oracle is a warning to inspect reward signals, not a
-   reason to train RL.
-6. No critic score is promoted into reward until the plan's human-calibration
-   gate is complete.
-
-After this test passes, continue code work on M2/M3 in parallel with the plan
-pilot preparation. Do not call the 40-question artifact a pilot, final model,
-or RL result.
-
-### Verified result — 23 July 2026
-
-The test passed every structural criterion:
-
-- `240` raw outcomes: 40 questions × 2 repeats × 3 actions.
-- `80` complete full-information training examples.
-- Zero candidate errors and no matrix-completeness warnings.
-- The manifest records the expected action registry, seed `7`, corpus/model
-  fingerprints, and `FeatureStructuralEncoder`; learned R-GCN/projector
-  components remain disabled.
-- The budget-free oracle did not collapse: Optimized GraphRAG was selected for
-  50 groups, GraphRAG for 20, and Hybrid RAG for 10.
-- Measured mean/p95 end-to-end latency in this engineering environment:
-  Hybrid RAG `3677/4210 ms`, Optimized GraphRAG `4225/5637 ms`, and GraphRAG
-  `4962/7287 ms`.
-
-These values are engineering diagnostics only because text retrieval was
-limited to 1,000 documents for this test. They are not deployment budgets or
-reportable final benchmark numbers.
+An enabled semantic or critic slot requires both an adapter and model ID. This
+keeps models replaceable and prevents a hidden default model from becoming part
+of the router architecture.

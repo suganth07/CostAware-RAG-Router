@@ -23,7 +23,7 @@ from src.router.data.validation import validate_complete_matrix
 def main() -> None:
     args = parse_args()
     bundle = _load_bundle(args)
-    samples = stratified_sample(bundle.eval_samples, limit=args.max_questions, seed=args.seed) if args.stratified else bundle.eval_samples[: args.max_questions]
+    samples = _select_samples(bundle.eval_samples, args)
     if not samples:
         raise RuntimeError("No evaluation samples were found")
     records = [question_record_from_sample(sample) for sample in samples]
@@ -35,7 +35,12 @@ def main() -> None:
         model_name=args.embedding_model,
     )
     llm = OllamaLLM(OllamaLLMConfig(model=args.llm_model, base_url=args.ollama_url, temperature=0.0, num_predict=160, keep_alive="30m", default_options={"num_gpu": 999}, timeout_seconds=args.timeout))
-    registry, index_reports = build_default_registry(bundle=bundle, embedding_adapter=embedding, llm=llm)
+    registry, index_reports = build_default_registry(
+        bundle=bundle,
+        embedding_adapter=embedding,
+        llm=llm,
+        normal_index_batch_size=args.index_batch_size,
+    )
     corpus_fingerprint = fingerprint_payload({"bundle": bundle.metadata, "documents": [(document.id, document.text) for document in bundle.documents], "graph_edges": [edge.id for edge in bundle.graph_edges]})
     model_fingerprint = fingerprint_payload({"embedding_model": args.embedding_model, "llm_model": args.llm_model, "generation": args.run_generation})
     run_payload = {"dataset": args.dataset, "split": args.split, "questions": [record.to_dict() for record in records], "corpus": corpus_fingerprint, "model": model_fingerprint, "repeats": args.repeats, "seed": args.seed}
@@ -53,16 +58,46 @@ def main() -> None:
 
 
 def _load_bundle(args):
+    # A frozen subset can contain arbitrary IDs from an earlier stratified
+    # collection. Load the complete split before resolving those IDs; limiting
+    # first would silently make most valid subset IDs unavailable.
+    eval_limit = None if args.questions_file else args.max_questions
     if args.dataset.startswith("metaqa_"):
         hop = args.dataset.removeprefix("metaqa_").removesuffix("hop")
         adapter = get_dataset_adapter("metaqa", hop=f"{hop}-hop", variant="vanilla", split=args.split)
-        bundle = adapter.load(limit_documents=None, limit_eval_samples=args.max_questions)
+        bundle = adapter.load(limit_documents=None, limit_eval_samples=eval_limit)
         if not args.full_corpus:
             # Keep native graph complete; trim text documents only for smoke wiring.
             bundle.documents = bundle.documents[: args.max_documents]
         return bundle
     adapter = get_dataset_adapter("2wiki", split=args.split) if args.dataset == "2wiki" else get_dataset_adapter("multihop_rag", split=args.split)
-    return adapter.load(limit_documents=None if args.full_corpus else args.max_documents, limit_eval_samples=args.max_questions)
+    return adapter.load(limit_documents=None if args.full_corpus else args.max_documents, limit_eval_samples=eval_limit)
+
+
+def _select_samples(available, args):
+    if args.questions_file:
+        selected_ids = _question_ids_from_file(args.questions_file)
+        available_by_id = {sample.id: sample for sample in available}
+        missing = [question_id for question_id in selected_ids if question_id not in available_by_id]
+        if missing:
+            raise RuntimeError(f"{len(missing)} requested question IDs are absent from dataset/split; first={missing[0]!r}")
+        return [available_by_id[question_id] for question_id in selected_ids]
+    return stratified_sample(available, limit=args.max_questions, seed=args.seed) if args.stratified else available[: args.max_questions]
+
+
+def _question_ids_from_file(path: str) -> list[str]:
+    rows = []
+    with Path(path).open("r", encoding="utf-8") as file:
+        for line in file:
+            value = line.strip()
+            if not value:
+                continue
+            rows.append(str(json.loads(value).get("question_id")) if value.startswith("{") else value)
+    if not rows or any(not value or value == "None" for value in rows):
+        raise RuntimeError("--questions-file must contain JSONL QuestionRecord rows or one question_id per line")
+    if len(rows) != len(set(rows)):
+        raise RuntimeError("--questions-file contains duplicate question IDs")
+    return rows
 
 
 def parse_args() -> argparse.Namespace:
@@ -70,6 +105,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dataset", choices=("metaqa_1hop", "metaqa_2hop", "metaqa_3hop", "2wiki", "multihop_rag"), required=True)
     parser.add_argument("--split", default="train")
     parser.add_argument("--max-questions", type=int, default=100)
+    parser.add_argument("--questions-file", help="JSONL QuestionRecord subset or one question_id per line; overrides --max-questions/--stratified")
     parser.add_argument("--max-documents", type=int, default=1000)
     parser.add_argument("--full-corpus", action="store_true")
     parser.add_argument("--stratified", action="store_true")
@@ -82,6 +118,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ollama-url", default="http://localhost:11434")
     parser.add_argument("--timeout", type=float, default=180.0)
     parser.add_argument("--embedding-batch-size", type=int, default=8)
+    parser.add_argument("--index-batch-size", type=int, default=512, help="NormalRAG cache-checkpoint batch size during registry construction.")
     parser.add_argument("--embedding-cache", default="artifacts/cache/embeddings.sqlite3")
     parser.add_argument("--output", default="artifacts/router/outcomes/pilot.jsonl")
     return parser.parse_args()

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 import json
 import socket
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -38,7 +39,17 @@ class OllamaEmbeddingAdapter(EmbeddingAdapter):
         vectors: list[list[float]] = []
         responses: list[dict[str, Any]] = []
 
-        for batch in self._batches(input_texts):
+        batch_size = self.config.batch_size or len(input_texts)
+        batch_count = (len(input_texts) + batch_size - 1) // batch_size
+        started = time.perf_counter()
+        self._logger.info(
+            "embedding request started model=%s texts=%s batches=%s batch_size=%s",
+            self.config.model,
+            len(input_texts),
+            batch_count,
+            batch_size,
+        )
+        for batch_index, batch in enumerate(self._batches(input_texts), start=1):
             raw = self._post_json("/api/embed", self._embedding_payload(batch))
             batch_vectors = _vectors_from_ollama(raw)
             if len(batch_vectors) != len(batch):
@@ -47,6 +58,15 @@ class OllamaEmbeddingAdapter(EmbeddingAdapter):
                 )
             vectors.extend(batch_vectors)
             responses.append(raw)
+            if batch_index == 1 or batch_index == batch_count or batch_index % 100 == 0:
+                self._logger.info(
+                    "embedding request progress model=%s batches=%s/%s vectors=%s elapsed_s=%.2f",
+                    self.config.model,
+                    batch_index,
+                    batch_count,
+                    len(vectors),
+                    time.perf_counter() - started,
+                )
 
         raw_result = _merge_raw_responses(responses, self.config.model)
 

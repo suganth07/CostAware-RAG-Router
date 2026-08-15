@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import time
 from typing import Optional
 
 from logger import get_logger
@@ -40,6 +41,8 @@ class BM25RAG:
         if not normalized_documents:
             return report
 
+        started = time.perf_counter()
+        self._logger.info("bm25_rag indexing started documents=%s", len(normalized_documents))
         with self.instrumentation.track("bm25.chunk_documents", {"documents": len(normalized_documents)}):
             chunks = self.chunker.chunk_documents(normalized_documents)
         report.chunks = len(chunks)
@@ -61,9 +64,10 @@ class BM25RAG:
             self.index.upsert_many(bm25_documents)
 
         self._logger.info(
-            "bm25_rag indexed documents=%s chunks=%s",
+            "bm25_rag indexed documents=%s chunks=%s elapsed_s=%.2f",
             report.documents,
             report.chunks,
+            time.perf_counter() - started,
         )
         return report
 

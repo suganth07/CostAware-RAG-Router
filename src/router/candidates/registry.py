@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+import time
 from typing import Any
 
 from src.adapters.embedding import EmbeddingAdapter
@@ -22,6 +23,7 @@ from src.router.candidates.base import CandidateAdapter
 from src.router.candidates.graph import GraphRAGCandidate
 from src.router.candidates.hybrid import HybridRAGCandidate
 from src.router.candidates.optimized_graph import OptimizedGraphRAGCandidate
+from logger import get_logger
 
 
 class CandidateRegistry:
@@ -42,9 +44,29 @@ class CandidateRegistry:
         return [self._by_id[action] for action in ACTION_IDS]
 
 
-def build_default_registry(*, bundle: Any, embedding_adapter: EmbeddingAdapter, llm: LLM) -> tuple[CandidateRegistry, dict[str, Any]]:
+def build_default_registry(
+    *,
+    bundle: Any,
+    embedding_adapter: EmbeddingAdapter,
+    llm: LLM,
+    normal_index_batch_size: int = 512,
+) -> tuple[CandidateRegistry, dict[str, Any]]:
     """Build and index all router candidates without learned R-GCN artifacts."""
-    rag_config = RAGConfig(chunk_size=900, chunk_overlap=120, top_k=12)
+    logger = get_logger(__name__)
+    overall_started = time.perf_counter()
+    logger.info(
+        "router registry indexing started documents=%s graph_nodes=%s graph_edges=%s embedding_cache=%s",
+        len(bundle.documents),
+        len(getattr(bundle, "graph_nodes", []) or []),
+        len(getattr(bundle, "graph_edges", []) or []),
+        _embedding_cache_summary(embedding_adapter),
+    )
+    rag_config = RAGConfig(
+        chunk_size=900,
+        chunk_overlap=120,
+        index_batch_size=normal_index_batch_size,
+        top_k=12,
+    )
     normal = NormalRAG(
         vector_store=InMemoryVectorStore(), embedding_adapter=embedding_adapter, llm=llm,
         config=rag_config, instrumentation=InMemoryComputeTracker(log_stages=False, namespace="dense"),
@@ -71,16 +93,36 @@ def build_default_registry(*, bundle: Any, embedding_adapter: EmbeddingAdapter, 
         instrumentation=InMemoryComputeTracker(log_stages=False, namespace="optimized"),
     )
     native_graph = bool(bundle.graph_nodes and bundle.graph_edges)
-    reports = {
-        "hybrid_rag": _jsonable(hybrid.index_documents(bundle.documents)),
-        "graph_rag": _jsonable(graph.index_dataset_bundle(bundle, include_documents=True)),
-        "optimized_graph_rag": _jsonable(optimized.index_dataset_bundle(bundle, include_documents=not native_graph)),
-    }
+    reports: dict[str, Any] = {}
+    for candidate_id, indexer in (
+        ("hybrid_rag", lambda: hybrid.index_documents(bundle.documents)),
+        ("graph_rag", lambda: graph.index_dataset_bundle(bundle, include_documents=True)),
+        ("optimized_graph_rag", lambda: optimized.index_dataset_bundle(bundle, include_documents=not native_graph)),
+    ):
+        stage_started = time.perf_counter()
+        logger.info(
+            "router registry stage started candidate=%s cache=%s",
+            candidate_id,
+            _embedding_cache_summary(embedding_adapter),
+        )
+        reports[candidate_id] = _jsonable(indexer())
+        logger.info(
+            "router registry stage completed candidate=%s elapsed_s=%.2f cache=%s report=%s",
+            candidate_id,
+            time.perf_counter() - stage_started,
+            _embedding_cache_summary(embedding_adapter),
+            reports[candidate_id],
+        )
     registry = CandidateRegistry([
         HybridRAGCandidate(hybrid, fingerprint={"config": asdict(rag_config), "implementation": "HybridRAG"}),
         GraphRAGCandidate(graph, fingerprint={"config": asdict(graph_config), "implementation": "GraphRAG"}),
         OptimizedGraphRAGCandidate(optimized, fingerprint={"config": asdict(optimized_config), "implementation": "OptimizedGraphRAG", "structural_encoder": "FeatureStructuralEncoder"}),
     ])
+    logger.info(
+        "router registry indexing completed elapsed_s=%.2f cache=%s",
+        time.perf_counter() - overall_started,
+        _embedding_cache_summary(embedding_adapter),
+    )
     return registry, reports
 
 
@@ -92,3 +134,8 @@ def _jsonable(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_jsonable(item) for item in value]
     return value
+
+
+def _embedding_cache_summary(embedding_adapter: EmbeddingAdapter) -> dict[str, Any] | None:
+    summary = getattr(embedding_adapter, "cache_summary", None)
+    return summary() if callable(summary) else None

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from collections.abc import Iterable
 from typing import Any, Optional
 
@@ -62,6 +63,13 @@ class GraphRAG:
     ) -> IndexingReport:
         normalized_documents = normalize_documents(documents)
         report = IndexingReport(documents=len(normalized_documents))
+        started = time.perf_counter()
+        self._logger.info(
+            "graph_rag indexing started documents=%s native_nodes=%s native_edges=%s",
+            len(normalized_documents),
+            len(extra_graph_nodes or []),
+            len(extra_graph_edges or []),
+        )
         with self.instrumentation.track(
             "upsert_native_graph",
             {
@@ -75,6 +83,12 @@ class GraphRAG:
             if extra_graph_edges:
                 self.graph_store.upsert_edges(extra_graph_edges)
                 report.graph_edges += len(extra_graph_edges)
+        self._logger.info(
+            "graph_rag native graph stage completed nodes=%s edges=%s elapsed_s=%.2f",
+            report.graph_nodes,
+            report.graph_edges,
+            time.perf_counter() - started,
+        )
         if not normalized_documents:
             return report
 
@@ -84,8 +98,17 @@ class GraphRAG:
         self.instrumentation.add_count("chunks", len(chunks))
 
         index_batch_size = max(1, int(self.config.index_batch_size))
+        indexing_started = time.perf_counter()
+        self._logger.info(
+            "graph_rag indexing chunks=%s batches=%s batch_size=%s native_graph=%s",
+            len(chunks),
+            (len(chunks) + index_batch_size - 1) // index_batch_size,
+            index_batch_size,
+            not extract_document_graph,
+        )
         for start in range(0, len(chunks), index_batch_size):
             batch = chunks[start : start + index_batch_size]
+            batch_number = start // index_batch_size + 1
             vector_documents: list[VectorDocument] = []
             with self.instrumentation.track(
                 "prepare_index_batch",
@@ -127,6 +150,16 @@ class GraphRAG:
             ]
             report.cached_vectors += len(vector_documents) - len(missing)
             if not missing:
+                if batch_number == 1 or start + len(batch) == len(chunks) or batch_number % 25 == 0:
+                    self._logger.info(
+                        "graph_rag indexing progress batches=%s/%s vectors=%s embedded=%s cached=%s elapsed_s=%.2f",
+                        batch_number,
+                        (len(chunks) + index_batch_size - 1) // index_batch_size,
+                        report.vectors,
+                        report.embedded_vectors,
+                        report.cached_vectors,
+                        time.perf_counter() - indexing_started,
+                    )
                 continue
             with self.instrumentation.track(
                 "embed_index_batch", {"chunks": len(missing)}
@@ -146,6 +179,16 @@ class GraphRAG:
             ):
                 self.vector_store.upsert_many(missing)
             report.embedded_vectors += len(missing)
+            if batch_number == 1 or start + len(batch) == len(chunks) or batch_number % 25 == 0:
+                self._logger.info(
+                    "graph_rag indexing progress batches=%s/%s vectors=%s embedded=%s cached=%s elapsed_s=%.2f",
+                    batch_number,
+                    (len(chunks) + index_batch_size - 1) // index_batch_size,
+                    report.vectors,
+                    report.embedded_vectors,
+                    report.cached_vectors,
+                    time.perf_counter() - indexing_started,
+                )
 
         with self.instrumentation.track(
             "persist_vector_index", {"vectors": report.vectors}
@@ -155,7 +198,7 @@ class GraphRAG:
 
         self._logger.info(
             "indexed documents=%s chunks=%s graph_nodes=%s graph_edges=%s "
-            "vectors=%s embedded=%s cached=%s",
+            "vectors=%s embedded=%s cached=%s elapsed_s=%.2f",
             report.documents,
             report.chunks,
             report.graph_nodes,
@@ -163,6 +206,7 @@ class GraphRAG:
             report.vectors,
             report.embedded_vectors,
             report.cached_vectors,
+            time.perf_counter() - started,
         )
         return report
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any, Optional
@@ -129,6 +130,13 @@ class OptimizedGraphRAG:
     ) -> OptimizedIndexingReport:
         normalized_documents = normalize_documents(documents)
         report = OptimizedIndexingReport(documents=len(normalized_documents))
+        started = time.perf_counter()
+        self._logger.info(
+            "optimized_grag indexing started documents=%s native_nodes=%s native_edges=%s",
+            len(normalized_documents),
+            len(extra_graph_nodes or []),
+            len(extra_graph_edges or []),
+        )
 
         if extra_graph_nodes:
             self._add_graph_nodes(extra_graph_nodes)
@@ -136,6 +144,12 @@ class OptimizedGraphRAG:
         if extra_graph_edges:
             self._add_graph_edges(extra_graph_edges)
             report.graph_edges += len(extra_graph_edges)
+        self._logger.info(
+            "optimized_grag native graph stage completed nodes=%s edges=%s elapsed_s=%.2f",
+            report.graph_nodes,
+            report.graph_edges,
+            time.perf_counter() - started,
+        )
 
         if normalized_documents:
             construction = self.graph_constructor.from_documents(normalized_documents)
@@ -164,12 +178,13 @@ class OptimizedGraphRAG:
 
         self.rebuild_capsules(report)
         self._logger.info(
-            "optimized_grag indexed documents=%s chunks=%s nodes=%s edges=%s capsules=%s",
+            "optimized_grag indexed documents=%s chunks=%s nodes=%s edges=%s capsules=%s elapsed_s=%.2f",
             report.documents,
             report.chunks,
             report.graph_nodes,
             report.graph_edges,
             report.capsules,
+            time.perf_counter() - started,
         )
         return report
 
@@ -209,6 +224,12 @@ class OptimizedGraphRAG:
         return self.graph_updater.apply_graph(nodes=nodes, edges=edges, config=config)
 
     def rebuild_capsules(self, report: OptimizedIndexingReport | None = None) -> None:
+        started = time.perf_counter()
+        self._logger.info(
+            "optimized_grag capsule rebuild started nodes=%s edges=%s",
+            len(self.local_graph.nodes),
+            len(self.local_graph.edges),
+        )
         with self.instrumentation.track(
             "optimized.rebuild_capsules",
             {"nodes": len(self.local_graph.nodes), "edges": len(self.local_graph.edges)},
@@ -250,6 +271,12 @@ class OptimizedGraphRAG:
                 report.details["artifact_capsule_fingerprint"] = getattr(
                     self.structural_encoder, "artifact_fingerprint", None
                 )
+        self._logger.info(
+            "optimized_grag capsule rebuild completed capsules=%s retrieval_mode=%s elapsed_s=%.2f",
+            len(result.capsules),
+            self.capsule_index.retrieval_mode,
+            time.perf_counter() - started,
+        )
 
     def retrieve(self, question: str) -> OptimizedRetrievedContext:
         query_chunk = Chunk(id="query", document_id="query", text=question, index=0)

@@ -4,10 +4,12 @@ import hashlib
 import json
 import sqlite3
 import threading
+import time
 from pathlib import Path
 from typing import Sequence
 
 from src.adapters.embedding.adapter import EmbeddingAdapter, EmbeddingResult
+from logger import get_logger
 
 
 def local_embedding_cache_namespace(model_name: str) -> str:
@@ -31,6 +33,7 @@ class CachingEmbeddingAdapter(EmbeddingAdapter):
         self.namespace = str(namespace)
         self.model_name = model_name or self.namespace
         self._write_lock = threading.Lock()
+        self._logger = get_logger(__name__)
         self._initialize()
 
     def embed_texts(self, texts: Sequence[str]) -> EmbeddingResult:
@@ -40,14 +43,25 @@ class CachingEmbeddingAdapter(EmbeddingAdapter):
 
         keys = [_text_key(text) for text in values]
         cached = self._load_vectors(set(keys))
+        cached_before = set(cached)
         missing_by_key: dict[str, str] = {}
         for key, value in zip(keys, values):
             if key not in cached:
                 missing_by_key.setdefault(key, value)
 
+        cache_hits = sum(key in cached_before for key in keys)
+        self._logger.info(
+            "embedding cache lookup namespace=%s texts=%s unique=%s hits=%s misses=%s",
+            self.namespace,
+            len(values),
+            len(set(keys)),
+            cache_hits,
+            len(missing_by_key),
+        )
         delegate_result: EmbeddingResult | None = None
         if missing_by_key:
             missing_keys = list(missing_by_key)
+            started = time.perf_counter()
             delegate_result = self.adapter.embed_texts(
                 [missing_by_key[key] for key in missing_keys]
             )
@@ -62,9 +76,14 @@ class CachingEmbeddingAdapter(EmbeddingAdapter):
             }
             self._store_vectors(fresh)
             cached.update(fresh)
+            self._logger.info(
+                "embedding cache stored namespace=%s fresh=%s elapsed_s=%.2f",
+                self.namespace,
+                len(fresh),
+                time.perf_counter() - started,
+            )
 
         vectors = [cached[key] for key in keys]
-        cache_hits = len(values) - len(missing_by_key)
         usage = dict(delegate_result.usage) if delegate_result is not None else {}
         usage.update(
             {
@@ -81,6 +100,37 @@ class CachingEmbeddingAdapter(EmbeddingAdapter):
             },
             usage=usage,
         )
+
+    def cache_summary(self) -> dict[str, int | str]:
+        """Return namespace-level cache counts without calling the embedder."""
+        with sqlite3.connect(self.cache_path) as connection:
+            row = connection.execute(
+                "SELECT COUNT(*) FROM embeddings WHERE namespace = ?",
+                (self.namespace,),
+            ).fetchone()
+        return {
+            "cache_path": str(self.cache_path),
+            "namespace": self.namespace,
+            "entries": int(row[0]) if row else 0,
+        }
+
+    def inspect_texts(self, texts: Sequence[str]) -> dict[str, int | float]:
+        """Measure cache coverage without generating any embeddings."""
+        values = [str(text) for text in texts]
+        keys = [_text_key(text) for text in values]
+        unique_keys = set(keys)
+        cached = self._load_vectors(unique_keys)
+        unique_hits = len(cached)
+        text_hits = sum(key in cached for key in keys)
+        return {
+            "texts": len(values),
+            "unique_texts": len(unique_keys),
+            "cached_unique_texts": unique_hits,
+            "missing_unique_texts": len(unique_keys) - unique_hits,
+            "cached_texts": text_hits,
+            "missing_texts": len(values) - text_hits,
+            "cache_hit_rate": text_hits / len(values) if values else 1.0,
+        }
 
     def _initialize(self) -> None:
         self.cache_path.parent.mkdir(parents=True, exist_ok=True)

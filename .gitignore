@@ -47,4 +47,18 @@ Thumbs.db
 Desktop.ini
 
 # Generated documentation bundle (the canonical files live in docs/)
-/docs.zip
+*.zip
+
+# Local temporary scripts
+smp.py
+
+# Generated caches
+artifacts/cache/
+
+# Generated router outcome data
+artifacts/router/outcomes/
+artifacts/router/critiques/
+artifacts/router/review_queue/
+
+# Generated audit reports
+reports/router/data_audit/

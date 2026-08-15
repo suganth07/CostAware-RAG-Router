@@ -31,7 +31,7 @@ def main() -> None:
         max_request_latency_ms=args.max_request_latency_ms,
     )
     budget.validate()
-    summary = _summarize(scored, budget=budget, repeats=args.repeats)
+    summary = summarize_pilot(scored, budget=budget, repeats=args.repeats)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -54,7 +54,7 @@ def _load_scored(path: str) -> list[ScoredOutcome]:
     return result
 
 
-def _summarize(scored: list[ScoredOutcome], *, budget: BudgetConfig, repeats: int) -> dict:
+def summarize_pilot(scored: list[ScoredOutcome], *, budget: BudgetConfig, repeats: int) -> dict:
     latency = latency_statistics(scored)
     per_action: dict[str, dict] = {}
     for action in ACTION_IDS:

@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 from src.adapters.llm.ollama import OllamaLLM, OllamaLLMConfig
 from src.router.critics import CriticResponseCache, StructuredCritic
 from src.router.critics.prompts import CRITIC_PROMPT_VERSION
+from src.router.constants import ACTION_IDS
 from src.router.data.serialization import read_jsonl, write_jsonl_atomic
 from src.router.types import CandidateOutcome, QuestionRecord
 
@@ -25,7 +26,11 @@ def main() -> None:
     args = parse_args()
     outcomes = [CandidateOutcome.from_dict(row) for row in read_jsonl(args.outcomes)]
     questions = {row["question_id"]: QuestionRecord(**row) for row in read_jsonl(args.questions)}
-    selected = balanced_sample(outcomes, limit=args.max_records, seed=args.seed)
+    selected = (
+        complete_question_sample(outcomes, limit=args.max_questions, seed=args.seed)
+        if args.max_questions is not None
+        else balanced_sample(outcomes, limit=args.max_records, seed=args.seed)
+    )
     existing = read_jsonl(args.output) if args.resume else []
     # Make the normalization flag explicit for artifacts written before the
     # recoverable empty-enum rule was introduced.
@@ -92,16 +97,49 @@ def balanced_sample(outcomes: list[CandidateOutcome], *, limit: int, seed: int) 
     return selected
 
 
+def complete_question_sample(outcomes: list[CandidateOutcome], *, limit: int, seed: int) -> list[CandidateOutcome]:
+    """Select whole question/repeat matrices, never isolated candidate rows.
+
+    This is used for the M4 critic requirement: every candidate must be judged
+    for each selected question.  A candidate-balanced record sampler alone
+    cannot provide that guarantee.
+    """
+    if limit < 1:
+        raise ValueError("--max-questions must be at least one")
+    grouped: dict[tuple[str, int], dict[str, CandidateOutcome]] = defaultdict(dict)
+    for outcome in outcomes:
+        if not outcome.error_type and not outcome.timeout and outcome.generated_answer.strip():
+            grouped[(outcome.question_id, outcome.repeat_id)][outcome.candidate_id] = outcome
+    complete = [
+        matrix
+        for matrix in grouped.values()
+        if all(action in matrix for action in ACTION_IDS)
+    ]
+    rng = random.Random(seed)
+    rng.shuffle(complete)
+    if len(complete) < limit:
+        raise RuntimeError(
+            f"Requested {limit} complete question matrices for critic scoring, "
+            f"but only {len(complete)} contain successful generated answers for all actions."
+        )
+    selected: list[CandidateOutcome] = []
+    for matrix in complete[:limit]:
+        selected.extend(matrix[action] for action in ACTION_IDS)
+    return selected
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Collect strict candidate-blind LLM critic judgments.")
     parser.add_argument("--outcomes", required=True)
     parser.add_argument("--questions", required=True)
     parser.add_argument("--output", default="artifacts/router/critiques/pilot_critic.jsonl", type=Path)
-    parser.add_argument("--judge-model", default="qwen3:4b-instruct")
+    parser.add_argument("--judge-model", required=True, help="Explicit model ID from the enabled primary-critic configuration.")
     parser.add_argument("--critic-cache", default="artifacts/router/cache/critic_responses.sqlite3")
     parser.add_argument("--ollama-base-url", default="http://localhost:11434")
     parser.add_argument("--judge-run-id", default=None)
-    parser.add_argument("--max-records", type=int, default=100)
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--max-records", type=int, default=100, help="Candidate-balanced record count (smoke/audit use).")
+    selection.add_argument("--max-questions", type=int, help="Select every action for this many complete question/repeat matrices.")
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--timeout-seconds", type=float, default=120.0)
     parser.add_argument("--max-tokens", type=int, default=700)

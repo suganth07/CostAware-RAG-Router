@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import time
 from typing import Optional
 
 from logger import get_logger
@@ -38,10 +39,16 @@ class HybridRAG:
 
     def index_documents(self, documents: Iterable[Document | dict | str]) -> RAGIndexingReport:
         normalized_documents = normalize_documents(documents)
+        started = time.perf_counter()
+        self._logger.info("hybrid_rag indexing started documents=%s", len(normalized_documents))
+        normal_started = time.perf_counter()
         with self.instrumentation.track("hybrid.index_normal", {"documents": len(normalized_documents)}):
             normal_report = self.normal_rag.index_documents(normalized_documents)
+        self._logger.info("hybrid_rag dense index completed elapsed_s=%.2f", time.perf_counter() - normal_started)
+        bm25_started = time.perf_counter()
         with self.instrumentation.track("hybrid.index_bm25", {"documents": len(normalized_documents)}):
             bm25_report = self.bm25_rag.index_documents(normalized_documents)
+        self._logger.info("hybrid_rag bm25 index completed elapsed_s=%.2f", time.perf_counter() - bm25_started)
 
         report = RAGIndexingReport(
             documents=len(normalized_documents),
@@ -53,10 +60,11 @@ class HybridRAG:
             },
         )
         self._logger.info(
-            "hybrid_rag indexed documents=%s chunks=%s vectors=%s",
+            "hybrid_rag indexed documents=%s chunks=%s vectors=%s elapsed_s=%.2f",
             report.documents,
             report.chunks,
             report.vectors,
+            time.perf_counter() - started,
         )
         return report
 

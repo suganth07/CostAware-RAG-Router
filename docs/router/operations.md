@@ -1,167 +1,104 @@
-# Router Operations
+# Router operations
 
-Run from the repository root after installing dependencies and starting Ollama.
+## Current approved operation: M4 pilot
+
+The next plan operation is the M4 pilot, not training. Follow the complete,
+resumable sequence in [M4 pilot collection runbook](m4-pilot.md). It collects
+the full action matrix, a repeated latency subset, deterministic metrics, and
+conditional critic artifacts. It explicitly stops before M6/M7.
+
+Before M4 full-corpus collection, run the read-only cache diagnostic from the
+[M4 runbook](m4-pilot.md#inspect-the-embedding-cache-first). It reports exact
+chunk-level cache coverage and makes no Ollama requests.
+
+## General collection pattern
+
+Run commands from the repository root in the same environment and hardware
+configuration used for the planned experiment. Start the local services used by
+the embedding/generation configuration before collection.
 
 ```powershell
 python scripts/router/collect_outcomes.py `
   --dataset metaqa_2hop `
   --split train `
-  --max-questions 100 `
-  --repeats 2 `
+  --max-questions <count> `
+  --repeats <count> `
   --stratified `
+  --full-corpus `
   --run-generation `
-  --output artifacts/router/outcomes/metaqa_2hop_smoke.jsonl
+  --index-batch-size <checkpoint-size> `
+  --output artifacts/router/outcomes/<experiment>.jsonl
 ```
 
-Score the raw collection:
+The collector is resumable by default. Keep the output path and all model,
+corpus, seed, and collection settings unchanged when resuming. Use a new
+artifact name for a different experiment. Each collection writes its raw
+outcomes, frozen question list, and manifest with fingerprints.
+
+## Score and audit an outcome matrix
 
 ```powershell
 python scripts/router/score_outcomes.py `
-  --outcomes artifacts/router/outcomes/metaqa_2hop_smoke.jsonl `
-  --questions artifacts/router/outcomes/metaqa_2hop_smoke.questions.jsonl `
-  --output artifacts/router/datasets/metaqa_2hop_smoke_scored.jsonl
-```
+  --outcomes artifacts/router/outcomes/<experiment>.jsonl `
+  --questions artifacts/router/outcomes/<experiment>.questions.jsonl `
+  --output artifacts/router/datasets/<experiment>_scored.jsonl
 
-Build budget-aware training examples. Leave budget flags absent until warm
-hardware measurements exist; then set them explicitly.
-
-```powershell
-python scripts/router/build_training_dataset.py `
-  --scored-outcomes artifacts/router/datasets/metaqa_2hop_smoke_scored.jsonl `
-  --max-request-latency-ms 100 `
-  --compute-budget 1.0 `
-  --output artifacts/router/datasets/metaqa_2hop_smoke_training.jsonl
-```
-
-Check the outcome manifest before trusting results: the action list must match,
-every question/repeat must have three actions, and
-`optimized_structural_encoder` must be `FeatureStructuralEncoder`.
-
-Audit a pilot before collecting more data or training a policy:
-
-```powershell
 python scripts/router/analyze_pilot.py `
-  --scored-outcomes artifacts/router/datasets/metaqa_2hop_pilot_100_scored.jsonl `
-  --repeats 2 `
-  --output reports/router/data_audit/metaqa_2hop_pilot_100.json
+  --scored-outcomes artifacts/router/datasets/<experiment>_scored.jsonl `
+  --repeats <count> `
+  --output reports/router/data_audit/<experiment>.json
 ```
 
-If a hard request budget is supplied, the report must show at least one feasible
-action for a meaningful fraction of questions. A report where every action is
-infeasible is a budget-configuration problem, not evidence that every pipeline
-is unusable.
+`analyze_pilot.py` checks the complete three-action matrix and reports quality,
+latency, errors, feasibility, and oracle-action distribution. It does not train
+anything.
 
-## Collect the first structured-critic pilot
+For M4 latency calibration, reuse a compatible main-pilot measurement as the
+first logical repeat and collect only two additional repeats. The dedicated
+`analyze_latency_subset.py` preserves raw run fingerprints and rejects an
+incompatible corpus, model, hardware, or candidate pipeline. The exact commands
+are in the [M4 runbook](m4-pilot.md#3-freeze-and-collect-the-repeated-latency-subset).
 
-After deterministic scoring, create 100 candidate-blind judgements. The
-command balances records over the three actions and can safely resume. It uses
-your local Ollama judge; pull the model first if it is not installed.
+## Final runtime outcome (after M6–M9)
 
-If `localhost:11434` is refused, first open a separate terminal and run
-`ollama serve` (keep it running), or start the Ollama desktop application.
-The script now checks the service and model once before it starts judging.
+The project is complete only when a user can enter a question in a terminal and
+receive the selected candidate, routing decision logs, and final generated
+answer. This is a later M9 runtime deliverable, not an M4 operation. Its CLI
+will load a validated exported router artifact, extract runtime-safe features,
+apply budgets/uncertainty fallback, select one candidate, execute it, and print
+structured routing telemetry plus the answer.
 
-```powershell
-ollama pull qwen3:4b-instruct
+## Critic operation is opt-in
 
-python scripts/router/score_critics.py `
-  --outcomes artifacts/router/outcomes/metaqa_2hop_pilot_100.jsonl `
-  --questions artifacts/router/outcomes/metaqa_2hop_pilot_100.questions.jsonl `
-  --judge-model qwen3:4b-instruct `
-  --max-records 100 `
-  --output artifacts/router/critiques/metaqa_2hop_pilot_100_critic.jsonl
-```
-
-Inspect the JSONL and its optional `*.failures.jsonl` companion. Do not merge
-critic scores into a reportable reward until a human audit has checked the
-sample; see [semantic-metrics-and-critic.md](semantic-metrics-and-critic.md).
-
-Critic responses are cached by full prompt, system prompt, model identifier,
-prompt version, and judge stage in
-`artifacts/router/cache/critic_responses.sqlite3`. Re-running the identical
-critic artifact therefore reuses prior local-LLM responses; changing the model
-or prompt version produces fresh judgments.
-
-Semantic and critic model choices are intentionally disabled by default. Set
-an adapter and `model_id` in `configs/router/semantic.yaml` or
-`configs/router/critics.yaml` only after validation. The configuration loader
-rejects enabled model slots without both values, so no model is silently
-hardcoded into the pipeline.
-
-Audit a completed critic artifact and create a 20-record blind human-review
-queue. The report compares action coverage, score distributions, the explicit
-schema-repair rate, exact-match agreement, and accepted-answer coverage. These
-are diagnostics, not human ground truth.
-
-```powershell
-python scripts/router/analyze_critics.py `
-  --critiques artifacts/router/critiques/metaqa_2hop_pilot_100_critic.jsonl `
-  --outcomes artifacts/router/outcomes/metaqa_2hop_pilot_100.jsonl `
-  --questions artifacts/router/outcomes/metaqa_2hop_pilot_100.questions.jsonl `
-  --scored-outcomes artifacts/router/datasets/metaqa_2hop_pilot_100_scored.jsonl `
-  --output reports/router/critic_audit/metaqa_2hop_pilot_100.json `
-  --review-output artifacts/router/review_queue/metaqa_2hop_pilot_100_blind_review.jsonl
-```
-
-After an approved human calibration set exists, enrich a *copy* of scored
-outcomes with answer-embedding metrics. Omit `--calibration` to record raw
-cosine only; it will not change reward quality.
-
-Fit the versioned calibration artifact first from the plan-required labelled
-equivalent/non-equivalent answer pairs. Each input JSONL row contains
-`answer_type`, `raw_similarity`, and boolean `equivalent`.
-
-```powershell
-python scripts/router/fit_embedding_calibration.py `
-  --labels artifacts/router/calibration/embedding_equivalence_labels.jsonl `
-  --output artifacts/router/calibration/embedding_similarity_v1.json
-```
-
-```powershell
-python scripts/router/enrich_embedding_metrics.py `
-  --scored-outcomes artifacts/router/datasets/metaqa_2hop_pilot_100_scored.jsonl `
-  --questions artifacts/router/outcomes/metaqa_2hop_pilot_100.questions.jsonl `
-  --calibration artifacts/router/calibration/embedding_similarity_v1.json `
-  --output artifacts/router/datasets/metaqa_2hop_pilot_100_embedding_scored.jsonl
-```
-
-## Corrected critic pilot (v3, two-pass)
-
-The v1 pilot was rejected: it treated context-grounded abstentions as globally
-correct despite non-empty accepted answers. Version 2 still over-scored the
-very long GraphRAG contexts. Do not merge either rejected artifact with v3.
-Version 3 uses two local judge calls per candidate: one context-free answer
-correctness call and one evidence-grounding call. Collect it into a fresh,
-separately versioned artifact and audit it with the same command above,
-substituting the v3 input/output paths.
+Critic collection is allowed only after an explicit model choice has been made
+in `configs/router/critics.yaml` and validated. Pass that chosen model ID
+explicitly to the script:
 
 ```powershell
 python scripts/router/score_critics.py `
-  --outcomes artifacts/router/outcomes/metaqa_2hop_pilot_100.jsonl `
-  --questions artifacts/router/outcomes/metaqa_2hop_pilot_100.questions.jsonl `
-  --judge-model qwen3:4b-instruct `
-  --max-records 100 `
-  --output artifacts/router/critiques/metaqa_2hop_pilot_100_critic_v3.jsonl
+  --outcomes artifacts/router/outcomes/<experiment>.jsonl `
+  --questions artifacts/router/outcomes/<experiment>.questions.jsonl `
+  --judge-model <configured-primary-model-id> `
+  --max-questions <complete-question-count> `
+  --output artifacts/router/critiques/<experiment>_primary.jsonl
 ```
 
+`--max-questions` always includes every candidate for each selected complete
+question/repeat matrix. For a 500-question M4 critic sample, that means 1,500
+candidate judgments. The critic cache is stored at
+`artifacts/router/cache/critic_responses.sqlite3` and includes prompt/model/
+stage version keys, so compatible reruns reuse results.
 
-## Collect the first structured-critic pilot
+Critic and semantic values remain optional/nullable until their human
+calibration gates are complete. Never replace missing optional metrics with
+zero, and never start M6/M7 merely because an M4 matrix exists.
 
-After deterministic scoring, create 100 candidate-blind judgements. The
-command balances records over the three actions and can safely resume. It uses
-your local Ollama judge; pull the model first if it is not installed.
+## Configuration boundaries
 
-```powershell
-ollama pull qwen3:4b-instruct
+- `configs/router/m4_pilot.yaml` records the planned pilot scale and seeds.
+- `configs/router/semantic.yaml` is disabled until a semantic model is selected
+  and validated.
+- `configs/router/critics.yaml` is disabled until primary/secondary critic
+  choices are selected and validated.
 
-python scripts/router/score_critics.py `
-  --outcomes artifacts/router/outcomes/metaqa_2hop_pilot_100.jsonl `
-  --questions artifacts/router/outcomes/metaqa_2hop_pilot_100.questions.jsonl `
-  --judge-model qwen3:4b-instruct `
-  --max-records 100 `
-  --output artifacts/router/critiques/metaqa_2hop_pilot_100_critic.jsonl
-```
-
-Inspect the JSONL and its optional `*.failures.jsonl` companion. Do not merge
-critic scores into a reportable reward until a human audit has checked the
-sample; see [semantic-metrics-and-critic.md](semantic-metrics-and-critic.md).
+No semantic-equivalence or critic model is built into the router architecture.

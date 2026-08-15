@@ -23,6 +23,7 @@ class RetrievalResult:
 class RAGConfig:
     chunk_size: int = 900
     chunk_overlap: int = 120
+    index_batch_size: int = 512
     top_k: int = 5
     max_context_chars: int = 12_000
     system_prompt: str = (

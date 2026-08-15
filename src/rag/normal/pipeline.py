@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import time
 from typing import Optional
 
 from logger import get_logger
@@ -51,28 +52,45 @@ class NormalRAG:
         if not chunks:
             return report
 
-        with self.instrumentation.track("normal.embed_chunks", {"chunks": len(chunks)}):
-            embedding_result = self.embedding_adapter.embed_texts([chunk.text for chunk in chunks])
-
-        vector_documents = [
-            VectorDocument(
-                id=chunk.id,
-                vector=vector,
-                text=chunk.text,
-                metadata={
-                    **chunk.metadata,
-                    "document_id": chunk.document_id,
-                    "chunk_index": chunk.index,
-                },
-            )
-            for chunk, vector in zip(chunks, embedding_result.vectors)
-        ]
-
-        with self.instrumentation.track("normal.upsert_vectors", {"vectors": len(vector_documents)}):
-            self.vector_store.upsert_many(vector_documents)
-
-        report.vectors = len(vector_documents)
-        self.instrumentation.add_count("normal.vectors", len(vector_documents))
+        index_batch_size = max(1, int(self.config.index_batch_size))
+        started = time.perf_counter()
+        self._logger.info(
+            "normal_rag indexing embeddings chunks=%s batches=%s batch_size=%s",
+            len(chunks),
+            (len(chunks) + index_batch_size - 1) // index_batch_size,
+            index_batch_size,
+        )
+        for batch_number, start in enumerate(range(0, len(chunks), index_batch_size), start=1):
+            batch = chunks[start : start + index_batch_size]
+            with self.instrumentation.track("normal.embed_chunks", {"chunks": len(batch), "batch": batch_number}):
+                embedding_result = self.embedding_adapter.embed_texts([chunk.text for chunk in batch])
+            vector_documents = [
+                VectorDocument(
+                    id=chunk.id,
+                    vector=vector,
+                    text=chunk.text,
+                    metadata={
+                        **chunk.metadata,
+                        "document_id": chunk.document_id,
+                        "chunk_index": chunk.index,
+                    },
+                )
+                for chunk, vector in zip(batch, embedding_result.vectors)
+            ]
+            with self.instrumentation.track("normal.upsert_vectors", {"vectors": len(vector_documents), "batch": batch_number}):
+                self.vector_store.upsert_many(vector_documents)
+            report.vectors += len(vector_documents)
+            if batch_number == 1 or start + len(batch) == len(chunks) or batch_number % 25 == 0:
+                self._logger.info(
+                    "normal_rag indexing progress batches=%s/%s vectors=%s cache_hits=%s cache_misses=%s elapsed_s=%.2f",
+                    batch_number,
+                    (len(chunks) + index_batch_size - 1) // index_batch_size,
+                    report.vectors,
+                    embedding_result.usage.get("embedding_cache_hits", 0),
+                    embedding_result.usage.get("embedding_cache_misses", 0),
+                    time.perf_counter() - started,
+                )
+        self.instrumentation.add_count("normal.vectors", report.vectors)
         self._logger.info(
             "normal_rag indexed documents=%s chunks=%s vectors=%s",
             report.documents,
