@@ -16,6 +16,16 @@ are auditable.
 5. Train outcome predictors and an oracle-imitation policy.
 6. Train the constrained full-information contextual bandit.
 
+## Current project status
+
+The 1,000-question M4 main matrix is collected, scored, audited, and converted
+to full-information rows. The repeated-latency calibration subset is deferred
+by scope and must remain an explicit limitation. M5 grouped split and data-card
+tools are verified on the pilot, but the required 15,000–30,000-question M5
+collection, reward calibration, and configured semantic/critic signals are not
+complete. Therefore this project must not start outcome-model, imitation, or
+contextual-bandit training yet.
+
 ## Why this order matters
 
 PPO is not the correct first implementation. The collector observes all three

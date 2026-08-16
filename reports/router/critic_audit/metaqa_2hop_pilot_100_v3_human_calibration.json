@@ -1,0 +1,15 @@
+{
+  "labels": 100,
+  "matched_critiques": 100,
+  "mean_absolute_error": {
+    "completeness": 0.042800000000000005,
+    "correctness": 0.77,
+    "groundedness": 0.011200000000000002
+  },
+  "promotion_ready": false,
+  "required_label_range": {
+    "maximum": 500,
+    "minimum": 300
+  },
+  "warning": "Promotion still requires a documented human decision and reward validation; this report does not change reward weights."
+}

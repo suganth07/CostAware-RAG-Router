@@ -45,7 +45,7 @@ class BM25Index:
     def upsert_many(self, documents: list[BM25Document]) -> None:
         for document in documents:
             self.upsert(document)
-
+ 
     def search(
         self,
         query: str,

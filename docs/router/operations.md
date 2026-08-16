@@ -93,6 +93,9 @@ Critic and semantic values remain optional/nullable until their human
 calibration gates are complete. Never replace missing optional metrics with
 zero, and never start M6/M7 merely because an M4 matrix exists.
 
+For the blind human-calibration queue and the completed-label validation
+command, see [Semantic metrics and structured critic](semantic-metrics-and-critic.md#blinded-human-calibration-workflow).
+
 ## Configuration boundaries
 
 - `configs/router/m4_pilot.yaml` records the planned pilot scale and seeds.

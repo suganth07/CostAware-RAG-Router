@@ -60,6 +60,10 @@ RL-style policy learning. It is not yet an RL training result.
   model-neutral adjudication interface, and human-calibration contract.
 - **Done**: the 100-record V3 critic artifact/audit was collected without
   failures. It is diagnostic only.
+- **Done (15 August 2026)**: blinded human-calibration queue builder, private
+  join-map handling, strict boolean label validation, and critic-versus-human
+  agreement report. A 100-record V3 calibration queue is prepared; it is a
+  workflow verification, not the required 300–500 reviewed-label set.
 - **Blocked**: selecting a secondary critic/adjudicator and the 300–500
   balanced human-reviewed calibration set. No default critic model is encoded
   in M3 configuration.
@@ -88,6 +92,10 @@ RL-style policy learning. It is not yet an RL training result.
   additional repeats (600 new outcomes); score them; and create the derived
   three-repeat latency-variation report. Raw runs remain separate and their
   fingerprints are checked before analysis.
+- **Deferred by current scope decision (15 August 2026)**: the additional 600
+  latency outcomes will not be collected now. The main pilot latency
+  distributions are available, but within-question latency variance remains
+  unknown and must not be claimed as measured.
 - **Conditional**: after a primary critic is explicitly enabled and validated,
   collect all three critic judgements for at least 500 complete question
   matrices. Semantic metrics are similarly conditional on a configured,
@@ -96,10 +104,18 @@ RL-style policy learning. It is not yet an RL training result.
   signals until the plan-required human review exists. No reward weights or
   human labels will be invented.
 
-### M5 — Full training dataset: Not started
+### M5 — Full training dataset: Partial (foundation verified)
 
-- **Pending**: 15,000–30,000 stratified questions; grouped split manifests;
-  selective semantic/critic labels; and the data card.
+- **Done (15 August 2026)**: grouped, leakage-audited split-manifest builder;
+  cross-domain holdout support; atomic assignment/manifest output; data-card
+  generator; and a pilot-scale verification. The 1,000-question pilot split
+  has 800 train, 100 validation, and 100 locked-test questions across 198
+  template groups, with no group leakage. Its data card records candidate
+  coverage, failures, latency, and metric availability.
+- **Pending**: a 15,000–30,000-question stratified full-information matrix,
+  a real multi-dataset cross-domain holdout, configured semantic/critic scores,
+  and a full M5 data card. The current pilot split is a tooling verification,
+  not permission to train M6/M7 models.
 
 ### M6 — Outcome model and oracle imitation: Not started
 
@@ -143,11 +159,10 @@ benchmark or deployment latency measurement.
 
 ## What happens next
 
-1. Run the remaining M4 latency subset workflow in
-   [the M4 pilot runbook](m4-pilot.md), reusing the compatible main-pilot
-   repeat and collecting only 600 new rows.
-2. Verify the derived three-repeat latency report, action imbalance, and
-   candidate failures before collecting more data.
+1. M4 repeated-latency calibration is deferred by scope; preserve this as a
+   known limitation rather than fabricating repeat variance.
+2. Reuse the verified M5 manifest/data-card tools when the full collection is
+   available; do not call the current pilot split a final evaluation split.
 3. If a validated primary critic is configured, collect complete three-action
    critic matrices for at least 500 questions.
 4. Obtain 300–500 balanced human reviews before selecting semantic/critic

@@ -81,6 +81,42 @@ reviewer sees the same information as the critic without being biased by the
 route name. Fill in its `human_review_template` fields before deciding whether
 to calibrate or promote the critic.
 
+### Blinded human-calibration workflow
+
+Use the V3 critic artifact to prepare a shareable queue and a private join map:
+
+```bash
+python scripts/router/prepare_human_calibration.py \
+  --critiques artifacts/router/critiques/metaqa_2hop_pilot_100_critic_v3.jsonl \
+  --outcomes artifacts/router/outcomes/metaqa_2hop_pilot_100.jsonl \
+  --questions artifacts/router/outcomes/metaqa_2hop_pilot_100.questions.jsonl \
+  --count 100 \
+  --seed 7 \
+  --queue-output artifacts/router/review_queue/metaqa_2hop_pilot_100_v3_human_calibration.jsonl \
+  --private-map-output artifacts/router/review_queue/metaqa_2hop_pilot_100_v3_human_calibration.private_map.jsonl
+```
+
+Give reviewers only the queue. Do not share the private map because it exposes
+candidate identity. For every row, replace the three `null` values under
+`human_review` with `true`/`false` (or `1`/`0`): `answer_correct`,
+`answer_grounded`, and `answer_complete`. Keep `notes` optional.
+
+After review, validate and score the labels locally:
+
+```bash
+python scripts/router/score_human_calibration.py \
+  --reviewed-queue artifacts/router/review_queue/metaqa_2hop_pilot_100_v3_human_calibration.jsonl \
+  --private-map artifacts/router/review_queue/metaqa_2hop_pilot_100_v3_human_calibration.private_map.jsonl \
+  --critiques artifacts/router/critiques/metaqa_2hop_pilot_100_critic_v3.jsonl \
+  --labels-output artifacts/router/calibration/metaqa_2hop_pilot_100_v3_human_labels.jsonl \
+  --report-output reports/router/critic_audit/metaqa_2hop_pilot_100_v3_human_calibration.json
+```
+
+The 100-row queue validates the workflow only. It is not sufficient for reward
+promotion: the plan requires 300–500 balanced manually reviewed examples.
+The report explicitly keeps `promotion_ready: false` below that threshold and
+never modifies reward weights.
+
 The audit reports two deterministic diagnostics. Exact-match agreement is
 intentionally narrow. Accepted-answer coverage additionally checks whether a
 verbose generated answer contains every expected answer, which is necessary
