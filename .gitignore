@@ -62,3 +62,4 @@ artifacts/router/review_queue/
 
 # Generated audit reports
 reports/router/data_audit/
+*.txt
