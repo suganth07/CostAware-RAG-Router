@@ -4,17 +4,19 @@
 /logs/
 **/logs/
 artifacts/*
-
+architecture-docs/*
 # Keep trained artifacts under artifacts/rgcn, but never commit transient DB files
 *.sqlite3-wal
 *.sqlite3-shm
 *.sqlite3-journal
+results/
 
+demo*
 # Large, reproducible per-query evaluation outputs
 reports/**/retrieval_records.jsonl
 reports/**/query_metrics.csv
 reports/**/query_results.csv
-
+reports/
 # Python
 __pycache__/
 *.py[cod]
@@ -62,3 +64,5 @@ artifacts/router/review_queue/
 
 # Generated audit reports
 reports/router/data_audit/
+*.txt
+architecture-docs/README.md
