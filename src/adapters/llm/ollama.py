@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import socket
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -99,6 +100,17 @@ class OllamaLLM(LLM):
         try:
             with urllib.request.urlopen(request, timeout=self.config.timeout_seconds) as response:
                 return json.loads(response.read().decode("utf-8"))
+        except (TimeoutError, socket.timeout) as exc:
+            raise TimeoutError(
+                "Timed out waiting for Ollama to generate a response "
+                f"after {self.config.timeout_seconds}s using model={self.config.model!r}."
+            ) from exc
+        except urllib.error.HTTPError as exc:
+            details = exc.read().decode("utf-8", errors="replace").strip()
+            detail_suffix = f" Response: {details}" if details else ""
+            raise ConnectionError(
+                f"Ollama returned HTTP {exc.code} for {url}.{detail_suffix}"
+            ) from exc
         except urllib.error.URLError as exc:
             raise ConnectionError(f"Failed to call Ollama at {url}: {exc}") from exc
 

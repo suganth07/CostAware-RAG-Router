@@ -161,7 +161,7 @@ class GRAGTerminalInterface:
                 num_predict=160,
                 keep_alive="30m",
                 default_options={"num_gpu": 999},
-                timeout_seconds=60,
+                timeout_seconds=180,
             )
         )
         
@@ -570,27 +570,39 @@ class GRAGTerminalInterface:
 
         print(f"\n[LOG] Full result saved → {self.result_log_path}")
 
+    def answer_question(
+        self,
+        question: str,
+        *,
+        compare_mode: Optional[bool] = None,
+    ) -> tuple[RoutingDecision, dict[str, RouteResult]]:
+        """Route and execute a question, returning structured results for other UIs."""
+        cleaned_question = question.strip()
+        if not cleaned_question:
+            raise ValueError("Question cannot be empty")
+
+        self.session_count += 1
+        decision = self._get_routing_decision(cleaned_question)
+        use_compare_mode = self.compare_mode if compare_mode is None else compare_mode
+        routes = self.policy.actions if use_compare_mode else (decision.selected_route,)
+        results = {
+            route: self._execute_route(route, cleaned_question)
+            for route in routes
+        }
+        return decision, results
+
     def process_question(self, question: str) -> None:
         """Process a user question end-to-end."""
-        self.session_count += 1
-        
-        print(f"\n[SESSION {self.session_count}] Processing question...")
-        
-        # Get routing decision
-        decision = self._get_routing_decision(question)
-        
+        print(f"\n[SESSION {self.session_count + 1}] Processing question...")
+        decision, results = self.answer_question(question)
+
         # Print logs
         if self.verbose:
             self.print_routing_logs(decision)
-        
+
         # Execute routes
         if self.compare_mode:
             print(f"\n[RUNNING ALL ROUTES FOR COMPARISON]")
-            results = {}
-            for route in self.policy.actions:
-                print(f"  Executing {route}...")
-                result = self._execute_route(route, question)
-                results[route] = result
             
             # Print execution logs
             if self.verbose:
@@ -606,7 +618,7 @@ class GRAGTerminalInterface:
         else:
             # Execute only selected route
             print(f"\n[EXECUTING] {decision.selected_route}...")
-            result = self._execute_route(decision.selected_route, question)
+            result = results[decision.selected_route]
             
             if self.verbose:
                 self.print_execution_logs(result)

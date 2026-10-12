@@ -197,7 +197,7 @@ class FastStartGRAGTerminalInterface(GRAGTerminalInterface):
                 num_predict=160,
                 keep_alive="30m",
                 default_options={"num_gpu": 999},
-                timeout_seconds=60,
+                timeout_seconds=180,
             )
         )
 
